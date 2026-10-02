@@ -6,3 +6,15 @@ dist/
 *.log
 .DS_Store
 
+
+# Fichiers générés
+assets/css/*.min.css
+assets/js/*.min.js
+
+# Contenus envoyés depuis l'admin (on garde la structure et les protections)
+uploads/**
+!uploads/
+!uploads/.htaccess
+!uploads/*/
+!uploads/*/.gitkeep
+!uploads/messages/.htaccess
