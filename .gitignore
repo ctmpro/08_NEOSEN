@@ -1,0 +1,8 @@
+node_modules/
+dist/
+00_UTILITAIRES/
+02_SAVE_PROD/
+.env
+*.log
+.DS_Store
+
