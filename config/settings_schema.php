@@ -258,7 +258,7 @@ return [
             'company_address'    => ['type' => 'text', 'label' => 'Adresse du siège social', 'default' => '47 rue Vivienne, 75002 Paris, France'],
             'company_rcs'        => ['type' => 'text', 'label' => 'Immatriculation RCS', 'default' => '131 568 255 R.C.S. Paris'],
             'company_siren'      => ['type' => 'text', 'label' => 'SIREN', 'default' => '131 568 255'],
-            'company_siret'      => ['type' => 'text', 'label' => 'SIRET (établissement principal)', 'default' => '', 'help' => 'Figure sur votre avis de situation INSEE (non indiqué sur le Kbis).'],
+            'company_siret'      => ['type' => 'text', 'label' => 'SIRET (établissement principal)', 'default' => '131 568 255 00015'],
             'company_euid'       => ['type' => 'text', 'label' => 'Numéro EUID', 'default' => 'FR7501.131568255'],
             'company_vat'        => ['type' => 'text', 'label' => 'N° de TVA intracommunautaire', 'default' => '', 'help' => 'À renseigner dès réception (espace professionnel impots.gouv.fr).'],
             'company_activity'   => ['type' => 'textarea', 'label' => 'Activité (objet)', 'default' => 'Conception, développement de logiciels et outils informatiques, ainsi que leur exploitation et maintenance. Conseil en informatique, en programmation et en stratégie digitale, et réalisation de prestations associées.'],
