@@ -30,7 +30,7 @@ return [
             'color_primary'    => ['type' => 'color', 'label' => 'Couleur principale', 'default' => '#3B4BFF'],
             'color_accent'     => ['type' => 'color', 'label' => 'Couleur d\'accent', 'default' => '#14C8B4'],
             'color_dark'       => ['type' => 'color', 'label' => 'Couleur sombre (textes, sections foncées)', 'default' => '#0A0F1F'],
-            'copyright'        => ['type' => 'text', 'label' => 'Mention copyright', 'default' => '{year} {site}. Tous droits réservés.', 'help' => '{year} et {site} sont remplacés automatiquement.'],
+            'copyright'        => ['type' => 'text', 'label' => 'Mention copyright', 'default' => '{year} {company}. Tous droits réservés.', 'help' => '{year}, {site} et {company} (dénomination + forme juridique) sont remplacés automatiquement.'],
             'show_whatsapp_float' => ['type' => 'bool', 'label' => 'Afficher le bouton WhatsApp flottant', 'default' => '1'],
         ],
     ],
@@ -47,7 +47,7 @@ return [
             'contact_phone'            => ['type' => 'tel', 'label' => 'Téléphone', 'default' => '+221 77 000 00 00'],
             'contact_whatsapp'         => ['type' => 'tel', 'label' => 'Numéro WhatsApp (format international)', 'default' => '+221770000000'],
             'contact_whatsapp_message' => ['type' => 'text', 'label' => 'Message WhatsApp pré-rempli', 'default' => 'Bonjour NEOSEN, je souhaite échanger sur un projet.'],
-            'contact_address'          => ['type' => 'text', 'label' => 'Adresse / Localisation', 'default' => 'Dakar, Sénégal'],
+            'contact_address'          => ['type' => 'text', 'label' => 'Adresse / Localisation', 'default' => 'Paris, France'],
             'contact_hours'            => ['type' => 'text', 'label' => 'Horaires', 'default' => 'Du lundi au vendredi, 9h – 18h'],
             'contact_map_embed'        => ['type' => 'url', 'label' => 'URL d\'intégration Google Maps (optionnel)', 'default' => ''],
         ],
@@ -245,14 +245,30 @@ return [
     ],
 
     /* ================================================================
-     * MENTIONS LÉGALES
+     * ENTREPRISE & PAGES LÉGALES
      * ================================================================ */
     'legal' => [
-        'label'  => 'Pages légales',
+        'label'  => 'Entreprise & pages légales',
         'icon'   => 'shield',
         'fields' => [
-            'legal_mentions' => ['type' => 'html', 'label' => 'Mentions légales', 'default' => "<h2>Éditeur du site</h2>\n<p>Le présent site est édité par NEOSEN.<br>Siège : Dakar, Sénégal.<br>Contact : contact@neosen.sn</p>\n<h2>Hébergement</h2>\n<p>À compléter avec les coordonnées de l'hébergeur.</p>\n<h2>Propriété intellectuelle</h2>\n<p>L'ensemble des contenus de ce site (textes, images, logos) est la propriété de NEOSEN ou de ses clients, et ne peut être reproduit sans autorisation.</p>\n<h2>Réalisations</h2>\n<p>Les marques et visuels des projets présentés appartiennent à leurs propriétaires respectifs.</p>"],
-            'privacy_policy' => ['type' => 'html', 'label' => 'Politique de confidentialité', 'default' => "<h2>Données collectées</h2>\n<p>Lorsque vous utilisez le formulaire de contact, nous collectons les informations que vous nous transmettez (nom, prénom, entreprise, email, téléphone, message et pièce jointe éventuelle).</p>\n<h2>Finalité</h2>\n<p>Ces données sont utilisées uniquement pour répondre à votre demande et assurer le suivi de la relation commerciale. Elles ne sont jamais cédées à des tiers.</p>\n<h2>Durée de conservation</h2>\n<p>Les données sont conservées au maximum 3 ans après le dernier contact.</p>\n<h2>Vos droits</h2>\n<p>Vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour l'exercer, écrivez-nous à contact@neosen.sn.</p>\n<h2>Protection anti-spam</h2>\n<p>Le formulaire est protégé par Google reCAPTCHA, soumis aux règles de confidentialité de Google.</p>"],
+            'company_legal_name' => ['type' => 'text', 'label' => 'Dénomination sociale', 'default' => 'NEOSEN'],
+            'company_legal_form' => ['type' => 'text', 'label' => 'Forme juridique', 'default' => 'Société par actions simplifiée à associé unique (SASU)'],
+            'company_form_short' => ['type' => 'text', 'label' => 'Forme juridique (abrégée)', 'default' => 'SAS', 'help' => 'Affichée après le nom dans le pied de page (ex : NEOSEN SAS).'],
+            'company_capital'    => ['type' => 'text', 'label' => 'Capital social', 'default' => '100,00 €'],
+            'company_address'    => ['type' => 'text', 'label' => 'Adresse du siège social', 'default' => '47 rue Vivienne, 75002 Paris, France'],
+            'company_rcs'        => ['type' => 'text', 'label' => 'Immatriculation RCS', 'default' => '131 568 255 R.C.S. Paris'],
+            'company_siren'      => ['type' => 'text', 'label' => 'SIREN', 'default' => '131 568 255'],
+            'company_siret'      => ['type' => 'text', 'label' => 'SIRET (établissement principal)', 'default' => '', 'help' => 'Figure sur votre avis de situation INSEE (non indiqué sur le Kbis).'],
+            'company_euid'       => ['type' => 'text', 'label' => 'Numéro EUID', 'default' => 'FR7501.131568255'],
+            'company_vat'        => ['type' => 'text', 'label' => 'N° de TVA intracommunautaire', 'default' => '', 'help' => 'À renseigner dès réception (espace professionnel impots.gouv.fr).'],
+            'company_activity'   => ['type' => 'textarea', 'label' => 'Activité (objet)', 'default' => 'Conception, développement de logiciels et outils informatiques, ainsi que leur exploitation et maintenance. Conseil en informatique, en programmation et en stratégie digitale, et réalisation de prestations associées.'],
+            'company_director'   => ['type' => 'text', 'label' => 'Directeur de la publication', 'default' => 'Cheikh Tidiane Mbaye, Président'],
+            'company_founded'    => ['type' => 'text', 'label' => 'Date de création (AAAA-MM-JJ)', 'default' => '2026-10-12', 'help' => 'Utilisée dans les données structurées (SEO).'],
+            'host_name'          => ['type' => 'text', 'label' => 'Hébergeur — nom', 'default' => '', 'help' => 'Obligatoire (loi LCEN) : nom, adresse et téléphone de l\'hébergeur.'],
+            'host_address'       => ['type' => 'text', 'label' => 'Hébergeur — adresse', 'default' => ''],
+            'host_phone'         => ['type' => 'text', 'label' => 'Hébergeur — téléphone', 'default' => ''],
+            'legal_mentions' => ['type' => 'html', 'label' => 'Mentions légales — contenu complémentaire', 'help' => 'Les informations sur l\'éditeur et l\'hébergeur ci-dessus sont affichées automatiquement en haut de la page.', 'default' => "<h2>Propriété intellectuelle</h2>\n<p>L'ensemble des éléments de ce site (textes, graphismes, logos, icônes, mise en page, code) est la propriété exclusive de NEOSEN, sauf mention contraire. Toute reproduction, représentation ou adaptation, totale ou partielle, sans autorisation écrite préalable est interdite (articles L.335-2 et suivants du Code de la propriété intellectuelle).</p>\n<h2>Réalisations présentées</h2>\n<p>Les marques, logos et captures d'écran des projets présentés appartiennent à leurs propriétaires respectifs et sont reproduits avec leur accord à titre de références.</p>\n<h2>Responsabilité</h2>\n<p>NEOSEN s'efforce de fournir des informations exactes et à jour, sans pouvoir garantir l'absence d'erreurs. Les liens vers des sites tiers sont proposés à titre informatif ; NEOSEN n'est pas responsable de leur contenu.</p>\n<h2>Données personnelles</h2>\n<p>Le traitement des données collectées via ce site est décrit dans notre politique de confidentialité.</p>\n<h2>Droit applicable</h2>\n<p>Le présent site et ses mentions légales sont soumis au droit français.</p>"],
+            'privacy_policy' => ['type' => 'html', 'label' => 'Politique de confidentialité — contenu', 'help' => 'Le responsable du traitement (dénomination, adresse, contact) est affiché automatiquement en haut de la page.', 'default' => "<h2>Données collectées</h2>\n<p>Lorsque vous utilisez le formulaire de contact, nous collectons les informations que vous nous transmettez : nom, prénom, entreprise, adresse email, téléphone, type de projet, budget indicatif, message et pièce jointe éventuelle. Nous enregistrons également, à des fins de sécurité, votre adresse IP et votre navigateur.</p>\n<h2>Finalités et base légale</h2>\n<p>Ces données servent uniquement à répondre à votre demande, à établir un devis et à assurer le suivi de la relation commerciale. Ce traitement repose sur votre consentement et sur les mesures précontractuelles prises à votre demande (article 6.1.a et 6.1.b du RGPD). La protection du formulaire contre les abus repose sur notre intérêt légitime.</p>\n<h2>Destinataires</h2>\n<p>Les données sont destinées exclusivement à NEOSEN. Elles ne sont ni vendues, ni cédées à des tiers. Elles sont stockées chez notre hébergeur et transitent par notre prestataire d'envoi d'emails.</p>\n<h2>Durée de conservation</h2>\n<p>Les données des demandes sont conservées 3 ans à compter du dernier contact, puis supprimées.</p>\n<h2>Vos droits</h2>\n<p>Conformément au RGPD et à la loi Informatique et Libertés, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité de vos données, ainsi que du droit de retirer votre consentement à tout moment. Pour les exercer, écrivez-nous à l'adresse indiquée ci-dessus. Vous pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).</p>\n<h2>Cookies</h2>\n<p>Ce site n'utilise que les cookies strictement nécessaires à son fonctionnement (session, sécurité du formulaire). Si une mesure d'audience est activée, elle n'est déposée qu'avec votre consentement.</p>\n<h2>Protection anti-spam</h2>\n<p>Le formulaire peut être protégé par Google reCAPTCHA, soumis aux règles de confidentialité et aux conditions d'utilisation de Google.</p>"],
         ],
     ],
 ];

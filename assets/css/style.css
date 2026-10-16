@@ -813,3 +813,12 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .has-dark-hero:not(.nav-open) .site-header:not(.is-scrolled) .nav-toggle { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .16); }
 .has-dark-hero:not(.nav-open) .site-header:not(.is-scrolled) .nav-toggle span { background: #fff; }
 .has-dark-hero .site-header:not(.is-scrolled) .brand-text { color: #fff; }
+
+/* ---------- Mentions légales ---------- */
+.legal-table { display: grid; margin: 1.2em 0 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.legal-table div { display: grid; gap: 2px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.legal-table div:last-child { border-bottom: 0; }
+.legal-table dt { font-size: 13px; color: var(--muted); }
+.legal-table dd { margin: 0; color: var(--ink); font-weight: 500; font-size: 16px; }
+@media (min-width: 600px) { .legal-table div { grid-template-columns: 240px 1fr; gap: 16px; align-items: baseline; } }
+.footer-legal { font-size: 12.5px; color: rgba(255, 255, 255, .42); margin-top: 6px; }

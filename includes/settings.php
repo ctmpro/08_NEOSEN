@@ -88,7 +88,35 @@ function site_name(): string {
 }
 
 function copyright_text(): string {
-    return strtr((string) setting('copyright'), ['{year}' => date('Y'), '{site}' => site_name()]);
+    return strtr((string) setting('copyright'), ['{year}' => date('Y'), '{site}' => site_name(), '{company}' => company_name()]);
+}
+
+/**
+ * Dénomination sociale complète (ex : NEOSEN SAS).
+ */
+function company_name(): string {
+    return trim(setting('company_legal_name', site_name()) . ' ' . setting('company_form_short', ''));
+}
+
+/**
+ * Informations légales renseignées : [libellé => valeur].
+ */
+function company_legal_rows(): array {
+    $rows = [
+        'Dénomination sociale' => setting('company_legal_name'),
+        'Forme juridique'      => setting('company_legal_form'),
+        'Capital social'       => setting('company_capital'),
+        'Siège social'         => setting('company_address'),
+        'RCS'                  => setting('company_rcs'),
+        'SIREN'                => setting('company_siren'),
+        'SIRET'                => setting('company_siret'),
+        'EUID'                 => setting('company_euid'),
+        'TVA intracommunautaire' => setting('company_vat'),
+        'Directeur de la publication' => setting('company_director'),
+        'Email'                => setting('contact_email'),
+        'Téléphone'            => setting('contact_phone'),
+    ];
+    return array_filter($rows, fn($v) => trim((string) $v) !== '');
 }
 
 /**

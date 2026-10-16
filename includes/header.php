@@ -23,17 +23,21 @@ $darkHero = in_array($current_page, ['data'], true);
 $logoLight = (string) (setting('logo_light') ?: $logo);
 
 $schemas = $meta['schema'] ?? [];
-$schemas[] = [
-    '@context' => 'https://schema.org',
-    '@type'    => 'Organization',
-    'name'     => $siteName,
-    'url'      => absolute_url(''),
-    'logo'     => media_url($logo, true),
-    'email'    => setting('contact_email'),
-    'telephone'=> setting('contact_phone'),
-    'address'  => ['@type' => 'PostalAddress', 'addressLocality' => setting('contact_address')],
-    'sameAs'   => array_values(social_links()),
-];
+$schemas[] = array_filter([
+    '@context'     => 'https://schema.org',
+    '@type'        => 'Organization',
+    'name'         => $siteName,
+    'legalName'    => company_name(),
+    'url'          => absolute_url(''),
+    'logo'         => media_url($logo, true),
+    'email'        => setting('contact_email'),
+    'telephone'    => setting('contact_phone'),
+    'foundingDate' => setting('company_founded'),
+    'identifier'   => setting('company_siren') ? ['@type' => 'PropertyValue', 'propertyID' => 'SIREN', 'value' => str_replace(' ', '', setting('company_siren'))] : null,
+    'vatID'        => setting('company_vat') ?: null,
+    'address'      => ['@type' => 'PostalAddress', 'streetAddress' => setting('company_address') ?: setting('contact_address')],
+    'sameAs'       => array_values(social_links()),
+]);
 ?><!doctype html>
 <html lang="<?= e(current_lang()) ?>">
 <head>

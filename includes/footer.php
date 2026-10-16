@@ -71,7 +71,11 @@ $wa = whatsapp_link();
         </div>
 
         <div class="footer-bottom">
-            <p>© <?= e(copyright_text()) ?></p>
+            <div>
+                <p>© <?= e(copyright_text()) ?></p>
+                <?php $legalLine = array_filter([setting('company_capital') ? company_name() . ' au capital de ' . setting('company_capital') : '', setting('company_rcs'), setting('company_address')]); ?>
+                <?php if ($legalLine): ?><p class="footer-legal"><?= e(implode(' · ', $legalLine)) ?></p><?php endif; ?>
+            </div>
             <ul>
                 <li><a href="<?= e(url('mentions-legales')) ?>"><?= e(t('footer.legal')) ?></a></li>
                 <li><a href="<?= e(url('politique-de-confidentialite')) ?>"><?= e(t('footer.privacy')) ?></a></li>
