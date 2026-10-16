@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/form.php';
 require_once __DIR__ . '/layout.php';
+require_once ROOT_PATH . '/includes/crm.php';
 
 header('X-Robots-Tag: noindex, nofollow');
 header('X-Frame-Options: SAMEORIGIN');
@@ -22,6 +23,20 @@ function admin_csrf_guard(): void {
     if (is_post() && !csrf_check()) {
         flash('error', 'Session expirée, merci de recommencer.');
         redirect($_SERVER['REQUEST_URI'] ?? admin_url());
+    }
+}
+
+/** Vérifie que les tables de gestion existent (sinon propose la mise à jour de la base). */
+function require_crm_tables(): void {
+    try {
+        db()->query('SELECT 1 FROM crm_documents LIMIT 1');
+    } catch (Throwable $e) {
+        admin_header('Mise à jour nécessaire', '');
+        echo '<div class="card"><h2>Le module Gestion doit être installé</h2><p class="muted" style="margin:10px 0 18px">Les tables des clients, devis et factures n\'existent pas encore dans votre base de données.</p>'
+            . (is_superadmin() ? '<form method="post" action="' . e(admin_url('update-db.php')) . '">' . csrf_field() . '<button class="btn btn-primary">Mettre à jour la base de données</button></form>' : '<p>Demandez à un super-administrateur de lancer la mise à jour.</p>')
+            . '</div>';
+        admin_footer();
+        exit;
     }
 }
 

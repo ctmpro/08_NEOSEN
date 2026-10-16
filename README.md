@@ -36,7 +36,7 @@ includes/     header, footer, fonctions, i18n, paramètres, accès aux données,
 lang/         Libellés d'interface (fr.php, en.php)
 pages/        Vues publiques (accueil, à propos, services, réalisations, data, contact, légal, sitemap, robots…)
 uploads/      Médias envoyés depuis l'admin (exécution PHP désactivée ; uploads/messages inaccessible publiquement)
-utilitaires/  PHPMailer, ReCaptcha
+utilitaires/  PHPMailer, ReCaptcha, FPDF
 install/      schema.sql, seed.php, install.php, seed-images/
 tools/        minify.php
 index.php     Contrôleur frontal (URL propres)
@@ -62,6 +62,31 @@ index.php     Contrôleur frontal (URL propres)
 
 Pour ajouter un nouveau texte éditable : déclarer le champ dans `config/settings_schema.php`
 puis l'afficher avec `setting('ma_cle')`. Il apparaît automatiquement dans l'admin.
+
+## Gestion commerciale (CRM & facturation)
+
+Section **Gestion** du back-office :
+
+| Écran | Rôle |
+|---|---|
+| **Vue d'ensemble** | CA HT du mois / de l'année, encaissements, reste à encaisser, retards, devis en attente, taux de transformation, CA sur 12 mois, pipeline, tâches |
+| **Clients & prospects** | Fiches (coordonnées, SIREN/TVA/NINEA, devise, délai de paiement), pipeline en colonnes (glisser-déposer), suivi : notes, appels, emails, rendez-vous, tâches avec échéance. Création d'un prospect en un clic depuis une demande du site |
+| **Devis** | Lignes, sections, remises, TVA multi-taux, acompte, catalogue, envoi par email (PDF joint), lien client pour consulter et **accepter en ligne**, conversion en facture, facture d'acompte (déduite automatiquement de la facture finale) |
+| **Factures & avoirs** | Numérotation continue `FAC-2026-0001` attribuée à l'émission, factures verrouillées après émission (correction par **avoir**), paiements partiels, statuts payé / en retard |
+| **Relances** | Factures en retard (3 niveaux : rappel, seconde relance, mise en demeure) et devis sans réponse, emails pré-remplis et modifiables, historique |
+| **Catalogue** | Prestations types réutilisables |
+
+Les PDF sont générés avec **FPDF** (`utilitaires/FPDF`, licence libre) et reprennent automatiquement les mentions
+légales de l'entreprise (SIRET, RCS, TVA, capital, pénalités de retard, indemnité de 40 €). Euro et franc CFA
+sont gérés (équivalence affichée). Tous les textes (préfixes, TVA, mentions, IBAN, conditions, modèles d'emails et
+de relances, délais) se règlent dans *Textes, médias & réglages → Gestion — Devis & factures*.
+
+**Site déjà installé ?** Ouvrez une page de la section Gestion : un bouton « Mettre à jour la base de données »
+crée les nouvelles tables sans toucher aux données existantes.
+
+> Réforme de la facturation électronique : les PDF générés ici ne sont pas des factures électroniques
+> au format structuré (Factur-X / UBL). Pour les factures entre entreprises françaises, l'obligation d'émission
+> passera par une plateforme agréée (PA) à partir de septembre 2027 pour les TPE/PME.
 
 ## Sécurité
 

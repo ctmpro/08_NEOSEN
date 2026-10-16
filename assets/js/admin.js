@@ -170,3 +170,153 @@
         $$('.drag-handle', list).forEach(h => { h.style.touchAction = 'none'; });
     });
 })();
+
+/* ==========================================================================
+   Gestion : lignes de documents, pipeline, utilitaires
+   ========================================================================== */
+(() => {
+    'use strict';
+    const $ = (s, c = document) => c.querySelector(s);
+    const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+
+    /* ---------- Lignes cliquables ---------- */
+    $$('tr.row-link').forEach(tr => tr.addEventListener('click', e => {
+        if (e.target.closest('a, button, input, select, form')) return;
+        window.location = tr.dataset.href;
+    }));
+
+    /* ---------- Copier le lien client ---------- */
+    $$('[data-copy]').forEach(btn => btn.addEventListener('click', () => {
+        const input = btn.parentElement.querySelector('input');
+        input.select();
+        (navigator.clipboard ? navigator.clipboard.writeText(input.value) : Promise.resolve(document.execCommand('copy')))
+            .then(() => { btn.textContent = 'Copié ✓'; setTimeout(() => { btn.textContent = 'Copier'; }, 1800); });
+    }));
+
+    /* ---------- Éditeur de lignes (devis / factures) ---------- */
+    const editor = $('[data-lines-editor]');
+    if (editor) {
+        const form = editor.closest('form');
+        const body = $('[data-lines]', editor);
+        const rates = JSON.parse(editor.dataset.vatRates || '["20"]');
+        const curSel = form.querySelector('[name="currency"]');
+        const num = v => parseFloat(String(v || '').replace(/\s| /g, '').replace(',', '.')) || 0;
+        const fmt = v => {
+            const cur = curSel ? curSel.value : 'EUR';
+            const d = cur === 'XOF' ? 0 : 2;
+            const s = v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+            return cur === 'XOF' ? s + ' FCFA' : s + ' €';
+        };
+        const round = v => { const d = curSel && curSel.value === 'XOF' ? 0 : 2; return Math.round(v * 10 ** d) / 10 ** d; };
+
+        const renumber = () => $$('[data-line]', body).forEach((line, i) => {
+            $$('[name^="lines["]', line).forEach(el => { el.name = el.name.replace(/^lines\[\d+\]/, `lines[${i}]`); });
+        });
+
+        const recalc = () => {
+            let sub = 0; const byRate = {};
+            $$('[data-line]', body).forEach(line => {
+                if (line.classList.contains('line--section')) return;
+                const f = n => line.querySelector(`[data-f="${n}"]`);
+                const total = round(num(f('quantity').value) * num(f('unit_price').value) * (1 - num(f('discount_pct').value) / 100));
+                line.querySelector('[data-total]').textContent = fmt(total);
+                sub += total;
+                const r = num(f('vat_rate').value);
+                byRate[r] = (byRate[r] || 0) + total;
+            });
+            const disc = num($('[data-discount]', editor).value);
+            let tax = 0;
+            Object.entries(byRate).forEach(([r, base]) => { tax += round(base * (1 - disc / 100) * r / 100); });
+            const discount = round(sub * disc / 100);
+            $('[data-t="subtotal"]', editor).textContent = fmt(sub);
+            $('[data-t="discount"]', editor).textContent = '− ' + fmt(discount);
+            $('[data-row-discount]', editor).hidden = disc <= 0;
+            $('[data-t="tax"]', editor).textContent = fmt(tax);
+            $('[data-t="total"]', editor).textContent = fmt(round(sub - discount + tax));
+        };
+
+        const vatOptions = sel => rates.map(r => `<option value="${r}"${String(r) === String(sel) ? ' selected' : ''}>${String(r).replace('.', ',')}</option>`).join('');
+        const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const trash = editor.querySelector('[data-remove]')?.innerHTML || '×';
+        const addLine = (data = {}, section = false) => {
+            const div = document.createElement('div');
+            div.className = 'line' + (section ? ' line--section' : '');
+            div.setAttribute('data-line', '');
+            div.innerHTML = `<span class="line-move"><button type="button" class="icon-btn" data-up title="Monter">↑</button><button type="button" class="icon-btn" data-down title="Descendre">↓</button></span>
+                <input type="hidden" name="lines[0][line_type]" value="${section ? 'section' : 'item'}" data-f="line_type">
+                <span class="line-desc"><input type="text" name="lines[0][description]" value="${esc(data.description)}" placeholder="${section ? 'Titre de section' : 'Désignation'}" data-f="description" maxlength="255">
+                ${section ? '' : `<textarea name="lines[0][details]" rows="1" placeholder="Détails (optionnel)" data-f="details">${esc(data.details)}</textarea>`}</span>
+                ${section ? '<span class="line-section-fill"></span>' : `
+                <input type="text" inputmode="decimal" name="lines[0][quantity]" value="${esc(data.quantity ?? 1)}" data-f="quantity" aria-label="Quantité">
+                <input type="text" name="lines[0][unit]" value="${esc(data.unit ?? 'forfait')}" data-f="unit" aria-label="Unité" list="units">
+                <input type="text" inputmode="decimal" name="lines[0][unit_price]" value="${esc(data.unit_price ?? '')}" data-f="unit_price" aria-label="Prix unitaire HT">
+                <select name="lines[0][vat_rate]" data-f="vat_rate" aria-label="TVA">${vatOptions(data.vat_rate ?? rates[0])}</select>
+                <input type="text" inputmode="decimal" name="lines[0][discount_pct]" value="" data-f="discount_pct" aria-label="Remise %" placeholder="0">
+                <span class="line-total num" data-total>—</span>`}
+                <button type="button" class="icon-btn icon-btn--danger" data-remove title="Supprimer la ligne">${trash}</button>`;
+            body.appendChild(div);
+            renumber(); recalc();
+            div.querySelector('[data-f="description"]').focus();
+            form.dispatchEvent(new Event('input'));
+        };
+
+        editor.addEventListener('input', recalc);
+        editor.addEventListener('change', recalc);
+        curSel && curSel.addEventListener('change', recalc);
+        $('[data-add-line]', editor).addEventListener('click', () => addLine({ vat_rate: rates.includes(String(form.dataset.defaultVat)) ? form.dataset.defaultVat : rates[0] }));
+        $('[data-add-section]', editor).addEventListener('click', () => addLine({}, true));
+        body.addEventListener('click', e => {
+            const line = e.target.closest('[data-line]');
+            if (!line) return;
+            if (e.target.closest('[data-remove]')) { line.remove(); renumber(); recalc(); form.dispatchEvent(new Event('input')); }
+            if (e.target.closest('[data-up]') && line.previousElementSibling) { body.insertBefore(line, line.previousElementSibling); renumber(); }
+            if (e.target.closest('[data-down]') && line.nextElementSibling) { body.insertBefore(line.nextElementSibling, line); renumber(); }
+        });
+        const cat = $('[data-catalog]');
+        cat && cat.addEventListener('change', () => {
+            const opt = cat.selectedOptions[0];
+            if (opt && opt.dataset.item) {
+                // Remplace la première ligne si elle est vide
+                const first = $('[data-line]', body);
+                if (first && $$('[data-line]', body).length === 1 && !first.querySelector('[data-f="description"]').value) first.remove();
+                addLine(JSON.parse(opt.dataset.item));
+            }
+            cat.value = '';
+        });
+        // Devise du client choisie automatiquement
+        const clientSel = form.querySelector('[data-client-select]');
+        clientSel && clientSel.addEventListener('change', () => {
+            const c = clientSel.selectedOptions[0]?.dataset.currency;
+            if (c && curSel) { curSel.value = c; recalc(); }
+        });
+        recalc();
+    }
+
+    /* ---------- Pipeline : glisser-déposer des cartes ---------- */
+    const kanban = $('[data-kanban]');
+    if (kanban) {
+        let dragged = null;
+        const token = ($('input[name="_csrf"]') || {}).value || '';
+        $$('.kanban-card', kanban).forEach(card => {
+            card.addEventListener('dragstart', e => { dragged = card; card.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; });
+            card.addEventListener('dragend', () => { card.classList.remove('is-dragging'); dragged = null; });
+        });
+        $$('[data-kanban-list]', kanban).forEach(list => {
+            list.addEventListener('dragover', e => { e.preventDefault(); list.classList.add('is-over'); });
+            list.addEventListener('dragleave', () => list.classList.remove('is-over'));
+            list.addEventListener('drop', e => {
+                e.preventDefault();
+                list.classList.remove('is-over');
+                if (!dragged) return;
+                const stage = list.closest('[data-stage]').dataset.stage;
+                list.prepend(dragged);
+                const sel = dragged.querySelector('select[name="stage"]');
+                if (sel) sel.value = stage;
+                const fd = new FormData();
+                fd.append('_csrf', token); fd.append('action', 'stage'); fd.append('id', dragged.dataset.id); fd.append('stage', stage);
+                fetch(window.location.pathname, { method: 'POST', body: fd, headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(r => r.json()).catch(() => alert('Connexion impossible : étape non enregistrée.'));
+            });
+        });
+    }
+})();

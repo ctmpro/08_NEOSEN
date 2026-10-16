@@ -97,6 +97,19 @@ if ($id) {
                 <div class="form-actions">
                     <a class="btn btn-primary" href="<?= e($reply) ?>"><?= icon('mail') ?> Répondre par email</a>
                     <?php if ($wa): ?><a class="btn btn-ghost" href="<?= e($wa) ?>" target="_blank" rel="noopener"><?= icon('whatsapp') ?> WhatsApp</a><?php endif; ?>
+                    <?php
+                    $linked = null;
+                    try {
+                        $lk = db()->prepare('SELECT id FROM crm_clients WHERE contact_message_id = ? OR (email <> "" AND email = ?) ORDER BY contact_message_id = ? DESC LIMIT 1');
+                        $lk->execute([$m['id'], $m['email'], $m['id']]);
+                        $linked = $lk->fetchColumn();
+                    } catch (Throwable $e) {}
+                    ?>
+                    <?php if ($linked): ?>
+                    <a class="btn btn-ghost" href="<?= e(admin_url('client.php', ['id' => $linked])) ?>"><?= icon('user') ?> Voir la fiche client</a>
+                    <?php else: ?>
+                    <a class="btn btn-ghost" href="<?= e(admin_url('client-edit.php', ['from_message' => $m['id']])) ?>"><?= icon('plus') ?> Créer un prospect</a>
+                    <?php endif; ?>
                 </div>
             </section>
         </div>

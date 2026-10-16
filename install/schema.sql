@@ -188,4 +188,161 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     KEY idx_messages_ip (ip_address, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- GESTION : clients, prospects, devis, factures, avoirs, relances
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS crm_clients (
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kind                ENUM('prospect','client') NOT NULL DEFAULT 'prospect',
+    stage               VARCHAR(30) NOT NULL DEFAULT 'new' COMMENT 'Étape du pipeline',
+    is_company          TINYINT(1) NOT NULL DEFAULT 1,
+    company             VARCHAR(190) NULL,
+    first_name          VARCHAR(100) NULL,
+    last_name           VARCHAR(100) NULL,
+    job_title           VARCHAR(120) NULL,
+    email               VARCHAR(190) NULL,
+    phone               VARCHAR(40) NULL,
+    website             VARCHAR(190) NULL,
+    address             VARCHAR(255) NULL,
+    postal_code         VARCHAR(20) NULL,
+    city                VARCHAR(120) NULL,
+    country             VARCHAR(80) NULL DEFAULT 'France',
+    siren               VARCHAR(30) NULL,
+    vat_number          VARCHAR(40) NULL,
+    other_id            VARCHAR(80) NULL COMMENT 'NINEA, RCCM…',
+    currency            CHAR(3) NOT NULL DEFAULT 'EUR',
+    payment_terms_days  SMALLINT UNSIGNED NULL,
+    source              VARCHAR(80) NULL,
+    estimated_value     DECIMAL(14,2) NULL,
+    next_action_at      DATE NULL,
+    notes               TEXT NULL,
+    contact_message_id  INT UNSIGNED NULL,
+    is_archived         TINYINT(1) NOT NULL DEFAULT 0,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_clients_kind (kind, stage, is_archived),
+    KEY idx_clients_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_activities (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id   INT UNSIGNED NOT NULL,
+    document_id INT UNSIGNED NULL,
+    type        VARCHAR(20) NOT NULL DEFAULT 'note' COMMENT 'note, call, email, meeting, task, system',
+    subject     VARCHAR(190) NOT NULL,
+    content     TEXT NULL,
+    due_at      DATETIME NULL,
+    done_at     DATETIME NULL,
+    admin_id    INT UNSIGNED NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_act_client (client_id, created_at),
+    KEY idx_act_tasks (type, done_at, due_at),
+    CONSTRAINT fk_act_client FOREIGN KEY (client_id) REFERENCES crm_clients(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_items (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(190) NOT NULL,
+    description TEXT NULL,
+    unit        VARCHAR(30) NULL DEFAULT 'forfait',
+    unit_price  DECIMAL(14,2) NOT NULL DEFAULT 0,
+    vat_rate    DECIMAL(5,2) NOT NULL DEFAULT 20,
+    currency    CHAR(3) NOT NULL DEFAULT 'EUR',
+    is_active   TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order  INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_sequences (
+    doc_type    VARCHAR(20) NOT NULL,
+    year        SMALLINT UNSIGNED NOT NULL,
+    last_number INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (doc_type, year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_documents (
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    doc_type            ENUM('quote','invoice','credit_note') NOT NULL,
+    number              VARCHAR(40) NULL COMMENT 'Attribué à l''émission (numérotation continue)',
+    status              VARCHAR(20) NOT NULL DEFAULT 'draft',
+    client_id           INT UNSIGNED NOT NULL,
+    client_snapshot     TEXT NULL COMMENT 'Coordonnées figées à l''émission (JSON)',
+    title               VARCHAR(190) NULL,
+    intro               TEXT NULL,
+    notes               TEXT NULL,
+    issue_date          DATE NULL,
+    due_date            DATE NULL COMMENT 'Échéance (facture) ou validité (devis)',
+    service_date        VARCHAR(120) NULL COMMENT 'Date ou période d''exécution',
+    currency            CHAR(3) NOT NULL DEFAULT 'EUR',
+    discount_pct        DECIMAL(5,2) NOT NULL DEFAULT 0,
+    subtotal            DECIMAL(14,2) NOT NULL DEFAULT 0,
+    discount_amount     DECIMAL(14,2) NOT NULL DEFAULT 0,
+    tax_total           DECIMAL(14,2) NOT NULL DEFAULT 0,
+    total               DECIMAL(14,2) NOT NULL DEFAULT 0,
+    amount_paid         DECIMAL(14,2) NOT NULL DEFAULT 0,
+    deposit_pct         DECIMAL(5,2) NOT NULL DEFAULT 0 COMMENT 'Acompte demandé (devis)',
+    is_deposit          TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Facture d''acompte',
+    vat_mention         VARCHAR(255) NULL,
+    source_id           INT UNSIGNED NULL COMMENT 'Devis d''origine / facture annulée',
+    public_token        CHAR(40) NULL,
+    sent_at             DATETIME NULL,
+    accepted_at         DATETIME NULL,
+    accepted_by         VARCHAR(190) NULL,
+    paid_at             DATETIME NULL,
+    last_reminder_at    DATETIME NULL,
+    reminder_count      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    created_by          INT UNSIGNED NULL,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_docs_number (doc_type, number),
+    UNIQUE KEY uq_docs_token (public_token),
+    KEY idx_docs_status (doc_type, status, due_date),
+    KEY idx_docs_client (client_id),
+    CONSTRAINT fk_docs_client FOREIGN KEY (client_id) REFERENCES crm_clients(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_document_lines (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id  INT UNSIGNED NOT NULL,
+    position     INT NOT NULL DEFAULT 0,
+    line_type    VARCHAR(10) NOT NULL DEFAULT 'item' COMMENT 'item ou section',
+    description  VARCHAR(255) NOT NULL,
+    details      TEXT NULL,
+    quantity     DECIMAL(12,3) NOT NULL DEFAULT 1,
+    unit         VARCHAR(30) NULL,
+    unit_price   DECIMAL(14,2) NOT NULL DEFAULT 0,
+    vat_rate     DECIMAL(5,2) NOT NULL DEFAULT 0,
+    discount_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+    line_total   DECIMAL(14,2) NOT NULL DEFAULT 0,
+    KEY idx_lines_doc (document_id, position),
+    CONSTRAINT fk_lines_doc FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_payments (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id INT UNSIGNED NOT NULL,
+    amount      DECIMAL(14,2) NOT NULL,
+    paid_on     DATE NOT NULL,
+    method      VARCHAR(40) NULL,
+    reference   VARCHAR(120) NULL,
+    notes       VARCHAR(255) NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_pay_doc (document_id),
+    CONSTRAINT fk_pay_doc FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS crm_reminders (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id INT UNSIGNED NOT NULL,
+    level       TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    recipient   VARCHAR(190) NULL,
+    subject     VARCHAR(255) NULL,
+    body        TEXT NULL,
+    sent_ok     TINYINT(1) NOT NULL DEFAULT 0,
+    admin_id    INT UNSIGNED NULL,
+    sent_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_rem_doc (document_id),
+    CONSTRAINT fk_rem_doc FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

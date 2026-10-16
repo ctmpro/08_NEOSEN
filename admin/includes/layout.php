@@ -8,10 +8,21 @@ function admin_menu(): array {
     try {
         $unread = (int) db()->query('SELECT COUNT(*) FROM contact_messages WHERE is_read = 0 AND is_archived = 0')->fetchColumn();
     } catch (Throwable $e) {}
+    $toRemind = 0;
+    try {
+        $toRemind = (int) db()->query('SELECT COUNT(*) FROM crm_documents WHERE doc_type = "invoice" AND status IN ("issued","partial") AND due_date < CURDATE()')->fetchColumn();
+    } catch (Throwable $e) {}
     return [
         ['dashboard', 'dashboard.php', 'Tableau de bord', 'grid'],
         ['messages', 'messages.php', 'Demandes', 'inbox', $unread],
-        '— Contenus',
+        '— Gestion',
+        ['crm', 'crm.php', 'Vue d\'ensemble', 'chart'],
+        ['clients', 'clients.php', 'Clients & prospects', 'users'],
+        ['quotes', 'documents.php?type=quote', 'Devis', 'edit'],
+        ['invoices', 'documents.php?type=invoice', 'Factures & avoirs', 'tag'],
+        ['reminders', 'reminders.php', 'Relances', 'clock', $toRemind],
+        ['items', 'items.php', 'Catalogue', 'cube'],
+        '— Contenus du site',
         ['projects', 'projects.php', 'Réalisations', 'image'],
         ['categories', 'categories.php', 'Catégories', 'tag'],
         ['services', 'services.php', 'Services', 'layers'],

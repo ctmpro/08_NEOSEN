@@ -245,6 +245,48 @@ return [
     ],
 
     /* ================================================================
+     * GESTION — DEVIS & FACTURES
+     * ================================================================ */
+    'billing' => [
+        'label'  => 'Gestion — Devis & factures',
+        'icon'   => 'tag',
+        'fields' => [
+            'billing_quote_prefix'   => ['type' => 'text', 'label' => 'Préfixe des devis', 'default' => 'DEV', 'help' => 'Numéro généré : DEV-2026-0001 (numérotation continue par année).'],
+            'billing_invoice_prefix' => ['type' => 'text', 'label' => 'Préfixe des factures', 'default' => 'FAC'],
+            'billing_credit_prefix'  => ['type' => 'text', 'label' => 'Préfixe des avoirs', 'default' => 'AV'],
+            'billing_currency'       => ['type' => 'select', 'label' => 'Devise par défaut', 'default' => 'EUR', 'options' => ['EUR' => 'Euro (€)', 'XOF' => 'Franc CFA (FCFA)']],
+            'billing_xof_rate'       => ['type' => 'text', 'label' => 'Parité EUR → FCFA', 'default' => '655.957', 'help' => 'Utilisée pour l\'équivalence affichée sur les documents et les statistiques.'],
+            'billing_vat_rates'      => ['type' => 'lines', 'label' => 'Taux de TVA proposés (%)', 'default' => "20\n10\n5.5\n2.1\n0"],
+            'billing_default_vat'    => ['type' => 'text', 'label' => 'Taux de TVA par défaut (%)', 'default' => '20'],
+            'billing_vat_mentions'   => ['type' => 'lines', 'label' => 'Mentions de TVA proposées', 'default' => "TVA non applicable – art. 259-1 du CGI (prestation de services à un preneur établi hors UE)\nAutoliquidation – art. 283-2 du CGI (preneur assujetti établi dans l'UE)\nTVA non applicable, art. 293 B du CGI", 'help' => 'À choisir sur un document lorsque la TVA est à 0 % (ex : client au Sénégal).'],
+            'billing_payment_terms'  => ['type' => 'text', 'label' => 'Délai de paiement par défaut (jours)', 'default' => '30'],
+            'billing_quote_validity' => ['type' => 'text', 'label' => 'Validité des devis (jours)', 'default' => '30'],
+            'billing_deposit_pct'    => ['type' => 'text', 'label' => 'Acompte par défaut sur les devis (%)', 'default' => '30'],
+            'billing_payment_methods'=> ['type' => 'lines', 'label' => 'Moyens de paiement', 'default' => "Virement bancaire\nCarte bancaire\nWave\nOrange Money\nChèque\nEspèces"],
+            'billing_bank_name'      => ['type' => 'text', 'label' => 'Banque', 'default' => ''],
+            'billing_iban'           => ['type' => 'text', 'label' => 'IBAN', 'default' => ''],
+            'billing_bic'            => ['type' => 'text', 'label' => 'BIC', 'default' => ''],
+            'billing_logo'           => ['type' => 'image', 'label' => 'Logo des documents PDF', 'default' => 'assets/images/logo-pdf.png', 'help' => 'PNG ou JPG conseillé (le SVG n\'est pas pris en charge dans les PDF).'],
+            'billing_quote_terms'    => ['type' => 'textarea', 'label' => 'Conditions des devis', 'default' => "Devis valable jusqu'à la date indiquée. Toute commande implique l'acceptation des présentes conditions. Un acompte est demandé au démarrage du projet, le solde étant facturé à la livraison."],
+            'billing_invoice_terms'  => ['type' => 'textarea', 'label' => 'Conditions de paiement des factures', 'default' => "Paiement à réception, au plus tard à la date d'échéance indiquée. En cas de retard de paiement, des pénalités calculées au taux de trois fois le taux d'intérêt légal sont exigibles, ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40 € (art. L.441-10 et D.441-5 du Code de commerce). Pas d'escompte pour paiement anticipé."],
+            'billing_send_quote_subject'   => ['type' => 'text', 'label' => 'Email d\'envoi de devis — objet', 'default' => 'Devis {number} — {company}'],
+            'billing_send_quote_body'      => ['type' => 'textarea', 'label' => 'Email d\'envoi de devis — message', 'default' => "Bonjour {client},\n\nVeuillez trouver ci-joint notre devis {number} d'un montant de {amount}.\nVous pouvez également le consulter et l'accepter en ligne : {link}\n\nNous restons à votre disposition pour toute question.\n\nBien cordialement,\nL'équipe {company}", 'help' => 'Variables : {client}, {number}, {amount}, {due_date}, {link}, {company}.'],
+            'billing_send_invoice_subject' => ['type' => 'text', 'label' => 'Email d\'envoi de facture — objet', 'default' => 'Facture {number} — {company}'],
+            'billing_send_invoice_body'    => ['type' => 'textarea', 'label' => 'Email d\'envoi de facture — message', 'default' => "Bonjour {client},\n\nVeuillez trouver ci-joint la facture {number} d'un montant de {amount}, payable avant le {due_date}.\nConsultation en ligne : {link}\n\nMerci pour votre confiance.\n\nBien cordialement,\nL'équipe {company}"],
+            'billing_reminder_delays'      => ['type' => 'text', 'label' => 'Relances factures : jours après échéance (niveaux 1, 2, 3)', 'default' => '3, 15, 30'],
+            'billing_quote_followup_days'  => ['type' => 'text', 'label' => 'Relance des devis sans réponse après (jours)', 'default' => '7'],
+            'billing_reminder_1_subject'   => ['type' => 'text', 'label' => 'Relance 1 — objet', 'default' => 'Rappel : facture {number} arrivée à échéance'],
+            'billing_reminder_1_body'      => ['type' => 'textarea', 'label' => 'Relance 1 — message', 'default' => "Bonjour {client},\n\nSauf erreur de notre part, la facture {number} d'un montant de {amount}, arrivée à échéance le {due_date}, reste à ce jour impayée (solde : {balance}).\nSi le règlement a déjà été effectué, merci de ne pas tenir compte de ce message.\n\nFacture : {link}\n\nBien cordialement,\nL'équipe {company}", 'help' => 'Variables : {client}, {number}, {amount}, {balance}, {due_date}, {days_late}, {link}, {company}.'],
+            'billing_reminder_2_subject'   => ['type' => 'text', 'label' => 'Relance 2 — objet', 'default' => 'Seconde relance : facture {number} impayée'],
+            'billing_reminder_2_body'      => ['type' => 'textarea', 'label' => 'Relance 2 — message', 'default' => "Bonjour {client},\n\nMalgré notre précédent rappel, la facture {number} ({balance} restant dû) est en retard de {days_late} jours.\nNous vous remercions de bien vouloir procéder à son règlement dans les meilleurs délais.\n\nFacture : {link}\n\nCordialement,\nL'équipe {company}"],
+            'billing_reminder_3_subject'   => ['type' => 'text', 'label' => 'Relance 3 — objet', 'default' => 'Mise en demeure de payer — facture {number}'],
+            'billing_reminder_3_body'      => ['type' => 'textarea', 'label' => 'Relance 3 — message', 'default' => "Bonjour {client},\n\nLa facture {number} d'un montant restant dû de {balance} est impayée depuis {days_late} jours malgré nos relances.\nSans règlement sous 8 jours, nous serons contraints d'appliquer les pénalités de retard et l'indemnité forfaitaire de 40 € prévues par la loi, et d'engager une procédure de recouvrement.\n\nFacture : {link}\n\nL'équipe {company}"],
+            'billing_quote_followup_subject' => ['type' => 'text', 'label' => 'Relance devis — objet', 'default' => 'Votre devis {number} — avez-vous des questions ?'],
+            'billing_quote_followup_body'    => ['type' => 'textarea', 'label' => 'Relance devis — message', 'default' => "Bonjour {client},\n\nJe reviens vers vous concernant notre devis {number} ({amount}), valable jusqu'au {due_date}.\nAvez-vous pu en prendre connaissance ? Je reste disponible pour l'ajuster ou en discuter de vive voix.\n\nConsulter et accepter le devis : {link}\n\nBien cordialement,\nL'équipe {company}"],
+        ],
+    ],
+
+    /* ================================================================
      * ENTREPRISE & PAGES LÉGALES
      * ================================================================ */
     'legal' => [

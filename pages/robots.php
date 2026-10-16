@@ -8,5 +8,5 @@ if (!setting_bool('seo_indexing')) {
     echo "Disallow: /\n";
     return;
 }
-echo "Disallow: /admin/\nDisallow: /api/\nDisallow: /uploads/messages/\nAllow: /\n\n";
+echo "Disallow: /admin/\nDisallow: /api/\nDisallow: /document/\nDisallow: /uploads/messages/\nAllow: /\n\n";
 echo 'Sitemap: ' . absolute_url('sitemap.xml') . "\n";

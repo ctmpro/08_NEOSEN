@@ -18,7 +18,7 @@ if (!csrf_check()) {
 
 $payload = json_decode((string) file_get_contents('php://input'), true) ?: [];
 // Liste blanche des tables réordonnables
-$tables = ['projects', 'project_images', 'services', 'content_blocks', 'technologies', 'project_categories'];
+$tables = ['projects', 'project_images', 'services', 'content_blocks', 'technologies', 'project_categories', 'crm_items'];
 $table = (string) ($payload['table'] ?? '');
 $ids = array_values(array_filter(array_map('intval', (array) ($payload['ids'] ?? []))));
 

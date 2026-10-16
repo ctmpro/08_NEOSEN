@@ -50,6 +50,8 @@ $routes = [
     'contact'                     => 'contact',
     'mentions-legales'            => 'legal',
     'politique-de-confidentialite'=> 'privacy',
+    'document/{slug}'             => 'document',
+    'document/{slug}/pdf'         => 'document',
     'sitemap.xml'                 => 'sitemap',
     'robots.txt'                  => 'robots',
 ];
