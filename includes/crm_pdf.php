@@ -21,10 +21,6 @@ function hex_rgb(string $hex): array {
     return [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
 }
 
-function crm_pdf_filename(array $doc): string {
-    return slugify(crm_doc_label($doc['doc_type']) . '-' . ($doc['number'] ?: 'brouillon-' . $doc['id'])) . '.pdf';
-}
-
 /**
  * Chemin d'un logo utilisable par FPDF (PNG/JPG ; WebP converti à la volée).
  */
@@ -35,12 +31,12 @@ function pdf_logo_path(): ?string {
         $ext = strtolower(pathinfo($full, PATHINFO_EXTENSION));
         if (in_array($ext, ['png', 'jpg', 'jpeg'], true)) return $full;
         if ($ext === 'webp' && function_exists('imagecreatefromwebp') && ($img = @imagecreatefromwebp($full))) {
-            $tmp = sys_get_temp_dir() . '/neosen-logo-' . md5($full . filemtime($full)) . '.png';
+            $tmp = crm_storage_dir('cache') . '/logo-' . md5($full . filemtime($full)) . '.png';
             if (!is_file($tmp)) {
                 imagesavealpha($img, true);
-                imagepng($img, $tmp);
+                @imagepng($img, $tmp);
             }
-            return $tmp;
+            if (is_file($tmp)) return $tmp;
         }
     }
     return null;
@@ -89,8 +85,9 @@ class NeosenPDF extends FPDF {
 /**
  * Retourne le contenu binaire du PDF d'un document.
  */
-function crm_pdf(int $docId): string {
+function crm_pdf(int $docId, bool $final = false): string {
     $doc = crm_doc($docId);
+    $seller = crm_doc_seller($doc);
     $lines = crm_doc_lines($docId);
     $client = crm_doc_client($doc);
     $cur = $doc['currency'];
@@ -104,14 +101,14 @@ function crm_pdf(int $docId): string {
     $pdf = new NeosenPDF('P', 'mm', 'A4');
     $pdf->primary = $primary;
     $pdf->SetTitle(pdf_txt(crm_doc_title($doc)));
-    $pdf->SetAuthor(pdf_txt(company_name()));
-    $pdf->SetCreator(pdf_txt(site_name()));
+    $pdf->SetAuthor(pdf_txt($seller['name']));
+    $pdf->SetCreator(pdf_txt($seller['brand']));
     $pdf->footerText = pdf_txt(implode(' - ', array_filter([
-        company_name() . (setting('company_legal_form') ? ', ' . setting('company_legal_form') : '') . (setting('company_capital') ? ' au capital de ' . setting('company_capital') : ''),
-        setting('company_address'),
-        setting('company_siret') ? 'SIRET ' . setting('company_siret') : (setting('company_siren') ? 'SIREN ' . setting('company_siren') : ''),
-        setting('company_rcs'),
-        setting('company_vat') ? 'TVA ' . setting('company_vat') : '',
+        $seller['name'] . ($seller['legal_form'] ? ', ' . $seller['legal_form'] : '') . ($seller['capital'] ? ' au capital de ' . $seller['capital'] : ''),
+        $seller['address'],
+        $seller['siret'] ? 'SIRET ' . $seller['siret'] : ($seller['siren'] ? 'SIREN ' . $seller['siren'] : ''),
+        $seller['rcs'],
+        $seller['vat'] ? 'TVA ' . $seller['vat'] : '',
     ])));
     $pdf->AliasNbPages();
     $pdf->SetMargins(15, 15, 15);
@@ -120,23 +117,31 @@ function crm_pdf(int $docId): string {
 
     /* ---------- En-tête : émetteur ---------- */
     $logo = pdf_logo_path();
+    $logoOk = false;
     if ($logo) {
-        $pdf->Image($logo, 15, 14, 0, 11);
+        try {
+            $pdf->Image($logo, 15, 14, 0, 11);
+            $logoOk = true;
+        } catch (Throwable $e) {
+            error_log('NEOSEN: logo PDF ignoré — ' . $e->getMessage());
+        }
+    }
+    if ($logoOk) {
         $y = 29;
     } else {
         $pdf->SetFont('Helvetica', 'B', 18);
         $pdf->SetTextColor(...$dark);
         $pdf->SetXY(15, 14);
-        $pdf->Cell(90, 10, pdf_txt(site_name()));
+        $pdf->Cell(90, 10, pdf_txt($seller['brand']));
         $y = 27;
     }
     $pdf->SetXY(15, $y);
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->SetTextColor(...$dark);
-    $pdf->Cell(90, 4.5, pdf_txt(company_name()), 0, 2);
+    $pdf->Cell(90, 4.5, pdf_txt($seller['name']), 0, 2);
     $pdf->SetFont('Helvetica', '', 8.5);
     $pdf->SetTextColor(...$muted);
-    foreach (array_filter([setting('company_address'), setting('contact_email'), setting('contact_phone'), setting('site_domain')]) as $info) {
+    foreach (array_filter([$seller['address'], $seller['email'], $seller['phone'], $seller['domain']]) as $info) {
         $pdf->Cell(90, 4.2, pdf_txt($info), 0, 2);
     }
 
@@ -154,6 +159,7 @@ function crm_pdf(int $docId): string {
     if ($isQuote && $doc['due_date']) $meta[] = ['Valable jusqu\'au', date('d/m/Y', strtotime($doc['due_date']))];
     if ($isInvoice && $doc['due_date']) $meta[] = ['Échéance', date('d/m/Y', strtotime($doc['due_date']))];
     if ($doc['service_date']) $meta[] = ['Exécution', $doc['service_date']];
+    $meta[] = ['Nature', crm_operation_types()[$doc['operation_type'] ?? 'services'] ?? 'Prestation de services'];
     if ($doc['source_id'] && ($src = crm_doc((int) $doc['source_id'])) && $src['number']) {
         $meta[] = [$src['doc_type'] === 'quote' ? 'Devis' : 'Facture d\'origine', $src['number']];
     }
@@ -310,9 +316,10 @@ function crm_pdf(int $docId): string {
     if ($cur === 'EUR' && (float) setting('billing_xof_rate') > 0) $extra[] = ['Soit environ', money($calc['total'] * (float) setting('billing_xof_rate'), 'XOF', false)];
     if ($cur === 'XOF' && (float) setting('billing_xof_rate') > 0) $extra[] = ['Soit environ', money($calc['total'] / (float) setting('billing_xof_rate'), 'EUR', false)];
     if ($isQuote && (float) $doc['deposit_pct'] > 0) $extra[] = ['Acompte à la commande (' . str_replace('.', ',', (string) (float) $doc['deposit_pct']) . ' %)', money($calc['total'] * (float) $doc['deposit_pct'] / 100, $cur, false)];
-    if ($isInvoice && (float) $doc['amount_paid'] > 0) $extra[] = ['Déjà réglé', '- ' . money((float) $doc['amount_paid'], $cur, false)];
-    if ($isInvoice && ($cr = crm_credited((int) $doc['id'])) > 0) $extra[] = ['Avoirs', '- ' . money($cr, $cur, false)];
-    if ($isInvoice && ((float) $doc['amount_paid'] > 0 || crm_credited((int) $doc['id']) > 0)) $extra[] = ['Reste à payer', money(crm_balance($doc), $cur, false)];
+    // Le PDF archivé reproduit la facture telle qu'émise (sans les règlements ultérieurs)
+    if ($isInvoice && !$final && (float) $doc['amount_paid'] > 0) $extra[] = ['Déjà réglé', '- ' . money((float) $doc['amount_paid'], $cur, false)];
+    if ($isInvoice && !$final && ($cr = crm_credited((int) $doc['id'])) > 0) $extra[] = ['Avoirs', '- ' . money($cr, $cur, false)];
+    if ($isInvoice && !$final && ((float) $doc['amount_paid'] > 0 || crm_credited((int) $doc['id']) > 0)) $extra[] = ['Reste à payer', money(crm_balance($doc), $cur, false)];
     foreach ($extra as [$k, $v]) {
         $pdf->SetX(105);
         $pdf->SetTextColor(...$muted);
@@ -332,16 +339,16 @@ function crm_pdf(int $docId): string {
         $pdf->MultiCell($leftW, 4, pdf_txt($doc['vat_mention']));
         $pdf->Ln(2);
     }
-    if ($isInvoice && (setting('billing_iban') || setting('billing_payment_methods'))) {
+    if ($isInvoice && ($seller['iban'] || setting('billing_payment_methods'))) {
         $pdf->SetFont('Helvetica', 'B', 8.5);
         $pdf->SetTextColor(...$dark);
         $pdf->Cell($leftW, 5, pdf_txt('Règlement'), 0, 2);
         $pdf->SetFont('Helvetica', '', 8);
         $pdf->SetTextColor(70, 76, 92);
         $pay = array_filter([
-            setting('billing_bank_name') ? 'Banque : ' . setting('billing_bank_name') : '',
-            setting('billing_iban') ? 'IBAN : ' . setting('billing_iban') : '',
-            setting('billing_bic') ? 'BIC : ' . setting('billing_bic') : '',
+            $seller['bank'] ? 'Banque : ' . $seller['bank'] : '',
+            $seller['iban'] ? 'IBAN : ' . $seller['iban'] : '',
+            $seller['bic'] ? 'BIC : ' . $seller['bic'] : '',
             'Référence à indiquer : ' . ($doc['number'] ?: ''),
         ]);
         foreach ($pay as $p) $pdf->Cell($leftW, 4.2, pdf_txt($p), 0, 2);
@@ -364,8 +371,7 @@ function crm_pdf(int $docId): string {
     }
     $pdf->SetY(max($pdf->GetY(), $endTotals) + 6);
 
-    $defaultTerms = $isQuote ? setting('billing_quote_terms') : ($isInvoice ? setting('billing_invoice_terms') : '');
-    $terms = trim(trim((string) $doc['notes']) . "\n\n" . trim((string) $defaultTerms));
+    $terms = crm_doc_terms($doc);
     if ($terms !== '') {
         if ($pdf->GetY() > 245) $pdf->AddPage();
         $pdf->SetFont('Helvetica', 'B', 8.5);
@@ -375,12 +381,5 @@ function crm_pdf(int $docId): string {
         $pdf->SetTextColor(...$muted);
         $pdf->MultiCell(180, 3.9, pdf_txt($terms));
     }
-    if ($doc['doc_type'] === 'credit_note') {
-        $pdf->Ln(2);
-        $pdf->SetFont('Helvetica', '', 7.8);
-        $pdf->SetTextColor(...$muted);
-        $pdf->MultiCell(180, 3.9, pdf_txt('Cet avoir vient en déduction de la facture d\'origine mentionnée ci-dessus.'));
-    }
-
     return $pdf->Output('S');
 }

@@ -81,8 +81,13 @@ légales de l'entreprise (SIRET, RCS, TVA, capital, pénalités de retard, indem
 sont gérés (équivalence affichée). Tous les textes (préfixes, TVA, mentions, IBAN, conditions, modèles d'emails et
 de relances, délais) se règlent dans *Textes, médias & réglages → Gestion — Devis & factures*.
 
-**Site déjà installé ?** Ouvrez une page de la section Gestion : un bouton « Mettre à jour la base de données »
-crée les nouvelles tables sans toucher aux données existantes.
+**Archivage légal** : à l'émission d'une facture ou d'un avoir, les mentions de l'entreprise et les conditions sont
+figées, et le PDF définitif est enregistré dans `uploads/documents/` (inaccessible en HTTP) avec son empreinte SHA-256.
+C'est ce fichier qui est ensuite téléchargé et envoyé : un changement d'adresse ou de capital ne modifie pas les
+factures déjà émises. Sauvegardez ce dossier (conservation obligatoire : 10 ans).
+
+**Mises à jour de la base** : elles s'appliquent automatiquement à l'ouverture de l'administration (nouvelles tables
+et colonnes, sans toucher aux données). Conservez le dossier `install/` sur le serveur (il contient `schema.sql`).
 
 > Réforme de la facturation électronique : les PDF générés ici ne sont pas des factures électroniques
 > au format structuré (Factur-X / UBL). Pour les factures entre entreprises françaises, l'obligation d'émission

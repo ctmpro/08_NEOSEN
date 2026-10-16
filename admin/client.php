@@ -113,6 +113,9 @@ admin_header(crm_client_name($c), 'clients', [
     </div>
 </section>
 
+<?php if ($cw = crm_client_warnings($c, 'invoice')): ?>
+<div class="alert alert-warning"><strong>Fiche incomplète pour la facturation :</strong><ul class="warn-list"><?php foreach ($cw as $w): ?><li><?= e($w) ?></li><?php endforeach; ?></ul><a class="link" href="<?= e(admin_url('client-edit.php', ['id' => $id])) ?>">Compléter la fiche</a></div>
+<?php endif; ?>
 <div class="stat-grid stat-grid--sm">
     <div class="stat-card"><span class="stat-label">Facturé HT</span><strong class="stat-value"><?= e(money($invoiced, $cur)) ?></strong></div>
     <div class="stat-card"><span class="stat-label">Encaissé</span><strong class="stat-value"><?= e(money($paid, $cur)) ?></strong></div>

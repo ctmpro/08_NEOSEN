@@ -19,13 +19,7 @@ if (!$doc) {
 
 // Téléchargement du PDF
 if (str_ends_with(rtrim($path, '/'), '/pdf')) {
-    require_once ROOT_PATH . '/includes/crm_pdf.php';
-    $pdf = crm_pdf((int) $doc['id']);
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: ' . (!empty($_GET['dl']) ? 'attachment' : 'inline') . '; filename="' . crm_pdf_filename($doc) . '"');
-    header('Content-Length: ' . strlen($pdf));
-    header('X-Robots-Tag: noindex');
-    echo $pdf;
+    crm_pdf_response($doc, !empty($_GET['dl']));
     return;
 }
 
@@ -78,32 +72,7 @@ require ROOT_PATH . '/includes/header.php';
             <?php if (isset($_GET['accepted'])): ?>
             <div class="doc-alert doc-alert--success" role="status"><?= icon('check-circle') ?> Merci ! Votre acceptation a bien été enregistrée. Nous revenons vers vous très rapidement pour lancer le projet.</div>
             <?php endif; ?>
-            <div class="doc-frame">
-                <iframe src="<?= e(url('document/' . $doc['public_token'] . '/pdf')) ?>#view=FitH" title="<?= e($docLabel) ?>" loading="lazy"></iframe>
-            </div>
-            <!-- Récapitulatif HTML (mobiles : les PDF ne s'affichent pas toujours dans une page) -->
-            <div class="doc-recap contact-card">
-                <h2 class="aside-title">Détail</h2>
-                <ul class="doc-lines">
-                    <?php foreach (crm_doc_lines((int) $doc['id']) as $l): ?>
-                    <?php if ($l['line_type'] === 'section'): ?>
-                    <li class="doc-line-section"><?= e($l['description']) ?></li>
-                    <?php else: ?>
-                    <li>
-                        <span><strong><?= e($l['description']) ?></strong>
-                        <small><?= e(rtrim(rtrim(number_format((float) $l['quantity'], 3, ',', ' '), '0'), ',')) ?> <?= e($l['unit']) ?> × <?= e(money((float) $l['unit_price'], $doc['currency'])) ?></small></span>
-                        <span class="num"><?= e(money((float) $l['line_total'], $doc['currency'])) ?></span>
-                    </li>
-                    <?php endif; ?>
-                    <?php endforeach; ?>
-                </ul>
-                <dl class="doc-facts doc-facts--totals">
-                    <div><dt>Total HT</dt><dd><?= e(money((float) $doc['subtotal'] - (float) $doc['discount_amount'], $doc['currency'])) ?></dd></div>
-                    <div><dt>TVA</dt><dd><?= e(money((float) $doc['tax_total'], $doc['currency'])) ?></dd></div>
-                    <div><dt>Total TTC</dt><dd class="doc-total"><?= e(money((float) $doc['total'], $doc['currency'])) ?></dd></div>
-                </dl>
-                <?php if ($doc['vat_mention']): ?><p class="small muted"><?= e($doc['vat_mention']) ?></p><?php endif; ?>
-            </div>
+            <?php partial('document-sheet', ['doc' => $doc]); ?>
         </div>
 
         <aside class="doc-public-side">

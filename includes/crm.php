@@ -62,6 +62,72 @@ function crm_doc_status(array $doc): array {
     ][$s] ?? [$s, 'muted'];
 }
 
+function crm_operation_types(): array {
+    return ['services' => 'Prestation de services', 'goods' => 'Livraison de biens', 'mixed' => 'Opération mixte (biens et services)'];
+}
+
+/** Pays de l'Union européenne (hors France), pour l'avertissement TVA intracommunautaire. */
+function crm_eu_countries(): array {
+    return ['allemagne', 'autriche', 'belgique', 'bulgarie', 'chypre', 'croatie', 'danemark', 'espagne', 'estonie', 'finlande', 'grèce', 'grece', 'hongrie',
+        'irlande', 'italie', 'lettonie', 'lituanie', 'luxembourg', 'malte', 'pays-bas', 'pologne', 'portugal', 'république tchèque', 'tchéquie', 'roumanie',
+        'slovaquie', 'slovénie', 'suède', 'germany', 'belgium', 'spain', 'italy', 'netherlands', 'portugal', 'ireland', 'luxembourg'];
+}
+
+function crm_is_france(?string $country): bool {
+    $c = mb_strtolower(trim((string) $country));
+    return $c === '' || in_array($c, ['france', 'fr', 'france métropolitaine'], true);
+}
+
+/**
+ * Avertissements sur les mentions client avant facturation.
+ */
+function crm_client_warnings(?array $c, string $docType = 'invoice'): array {
+    if (!$c) return [];
+    $w = [];
+    $isCompany = trim((string) ($c['company'] ?? '')) !== '';
+    if ($docType !== 'quote' && trim((string) ($c['address'] ?? '')) === '') {
+        $w[] = 'Adresse du client manquante : elle est obligatoire sur une facture.';
+    }
+    if ($isCompany && crm_is_france($c['country'] ?? '') && trim((string) ($c['siren'] ?? '')) === '') {
+        $w[] = 'SIREN du client manquant : il devient une mention obligatoire des factures entre entreprises françaises avec la réforme de la facturation électronique.';
+    }
+    if ($isCompany && in_array(mb_strtolower(trim((string) ($c['country'] ?? ''))), crm_eu_countries(), true) && trim((string) ($c['vat_number'] ?? '')) === '') {
+        $w[] = 'N° de TVA intracommunautaire du client manquant : indispensable pour facturer sans TVA (autoliquidation) un client établi dans l\'UE.';
+    }
+    return $w;
+}
+
+/** Mentions de l'émetteur (paramètres actuels). */
+function crm_seller_info(): array {
+    return [
+        'name' => company_name(), 'brand' => site_name(), 'legal_form' => setting('company_legal_form'), 'capital' => setting('company_capital'),
+        'address' => setting('company_address'), 'siren' => setting('company_siren'), 'siret' => setting('company_siret'), 'rcs' => setting('company_rcs'),
+        'vat' => setting('company_vat'), 'email' => setting('contact_email'), 'phone' => setting('contact_phone'), 'domain' => setting('site_domain'),
+        'bank' => setting('billing_bank_name'), 'iban' => setting('billing_iban'), 'bic' => setting('billing_bic'),
+    ];
+}
+
+/** Mentions de l'émetteur d'un document : figées à l'émission, sinon actuelles. */
+function crm_doc_seller(array $doc): array {
+    if (!empty($doc['seller_snapshot']) && is_array($snap = json_decode($doc['seller_snapshot'], true))) {
+        return $snap + crm_seller_info();
+    }
+    return crm_seller_info();
+}
+
+/** Conditions imprimées sur un document (figées à l'émission). */
+function crm_doc_terms(array $doc): string {
+    if ($doc['status'] !== 'draft' && $doc['terms_snapshot'] !== null && $doc['terms_snapshot'] !== '') {
+        return (string) $doc['terms_snapshot'];
+    }
+    $default = $doc['doc_type'] === 'quote' ? setting('billing_quote_terms') : ($doc['doc_type'] === 'invoice' ? setting('billing_invoice_terms') : '');
+    $terms = trim(trim((string) $doc['notes']) . "\n\n" . trim((string) $default));
+    if ($doc['doc_type'] === 'credit_note') {
+        $terms = trim($terms . "\n\nCet avoir vient en déduction de la facture d'origine mentionnée ci-dessus.");
+    }
+    return $terms;
+}
+
 function crm_activity_types(): array {
     return [
         'note' => ['Note', 'edit'], 'call' => ['Appel', 'phone'], 'email' => ['Email', 'mail'],
@@ -294,8 +360,9 @@ function crm_issue(int $docId): ?string {
         }
         $number = crm_next_number($doc['doc_type'], (int) substr($issue, 0, 4));
         $status = $doc['doc_type'] === 'quote' ? 'sent' : 'issued';
-        $pdo->prepare('UPDATE crm_documents SET number = ?, status = ?, issue_date = ?, client_snapshot = ?, public_token = COALESCE(public_token, ?) WHERE id = ?')
-            ->execute([$number, $status, $issue, json_encode(crm_client_snapshot($client), JSON_UNESCAPED_UNICODE), bin2hex(random_bytes(20)), $docId]);
+        $pdo->prepare('UPDATE crm_documents SET number = ?, status = ?, issue_date = ?, client_snapshot = ?, seller_snapshot = ?, terms_snapshot = ?, public_token = COALESCE(public_token, ?) WHERE id = ?')
+            ->execute([$number, $status, $issue, json_encode(crm_client_snapshot($client), JSON_UNESCAPED_UNICODE), json_encode(crm_seller_info(), JSON_UNESCAPED_UNICODE),
+                crm_doc_terms($doc), bin2hex(random_bytes(20)), $docId]);
 
         if ($doc['doc_type'] === 'credit_note' && $doc['source_id']) {
             crm_refresh_invoice((int) $doc['source_id']);
@@ -313,7 +380,105 @@ function crm_issue(int $docId): ?string {
         return 'Erreur lors de l\'émission du document.';
     }
     crm_log((int) $doc['client_id'], crm_doc_label($doc['doc_type']) . ' ' . $number . ($doc['doc_type'] === 'invoice' ? ' émise' : ' émis') . ' — ' . money((float) $doc['total'], $doc['currency'], false), 'system', $docId);
+    // Factures et avoirs : le PDF définitif est archivé et ne sera plus régénéré
+    if ($doc['doc_type'] !== 'quote') {
+        crm_archive_pdf($docId);
+    }
     return null;
+}
+
+/* ------------------------------------------------------------------
+ * PDF : archivage et diffusion
+ * ------------------------------------------------------------------ */
+
+/** Dossier de stockage privé (uploads/documents, inaccessible en HTTP). */
+function crm_storage_dir(string $sub = ''): string {
+    $base = UPLOAD_PATH . '/documents';
+    if (!is_dir($base)) {
+        @mkdir($base, 0755, true);
+    }
+    if (!is_file($base . '/.htaccess')) {
+        @file_put_contents($base . '/.htaccess', "Require all denied\n");
+    }
+    $dir = $base . ($sub !== '' ? '/' . trim($sub, '/') : '');
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+/**
+ * Génère et archive le PDF définitif d'un document émis (avec empreinte SHA-256).
+ */
+function crm_archive_pdf(int $docId): bool {
+    $doc = crm_doc($docId);
+    if (!$doc || $doc['status'] === 'draft') return false;
+    try {
+        require_once ROOT_PATH . '/includes/crm_pdf.php';
+        $bytes = crm_pdf($docId, true);
+        $rel = 'uploads/documents/' . substr((string) $doc['issue_date'], 0, 4) . '/' . slugify($doc['doc_type'] . '-' . $doc['number']) . '-' . substr((string) $doc['public_token'], 0, 8) . '.pdf';
+        crm_storage_dir(substr((string) $doc['issue_date'], 0, 4));
+        if (file_put_contents(ROOT_PATH . '/' . $rel, $bytes) === false) {
+            throw new RuntimeException('écriture impossible dans uploads/documents');
+        }
+        db()->prepare('UPDATE crm_documents SET pdf_path = ?, pdf_hash = ? WHERE id = ?')->execute([$rel, hash('sha256', $bytes), $docId]);
+        return true;
+    } catch (Throwable $e) {
+        error_log('NEOSEN: archivage PDF impossible (document ' . $docId . ') — ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Contenu PDF d'un document : fichier archivé pour les factures/avoirs émis, sinon généré.
+ */
+function crm_pdf_bytes(array $doc): string {
+    if ($doc['doc_type'] !== 'quote' && $doc['status'] !== 'draft') {
+        if (empty($doc['pdf_path']) || !is_file(ROOT_PATH . '/' . $doc['pdf_path'])) {
+            crm_archive_pdf((int) $doc['id']);
+            $doc = crm_doc((int) $doc['id']);
+        }
+        if (!empty($doc['pdf_path']) && is_file($file = ROOT_PATH . '/' . $doc['pdf_path'])) {
+            return (string) file_get_contents($file);
+        }
+    }
+    require_once ROOT_PATH . '/includes/crm_pdf.php';
+    return crm_pdf((int) $doc['id']);
+}
+
+/**
+ * Envoie le PDF au navigateur. Toute sortie parasite (notice, espace) est supprimée pour ne pas
+ * corrompre le fichier ; en cas d'erreur, une page lisible est affichée à la place.
+ */
+function crm_pdf_response(array $doc, bool $download, bool $showErrors = false): void {
+    while (ob_get_level() > 0) ob_end_clean();
+    ob_start();
+    try {
+        $bytes = crm_pdf_bytes($doc);
+        if (strncmp($bytes, '%PDF', 4) !== 0) throw new RuntimeException('contenu PDF invalide');
+    } catch (Throwable $e) {
+        ob_end_clean();
+        error_log('NEOSEN: génération PDF impossible (document ' . $doc['id'] . ') — ' . $e->getMessage());
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!doctype html><meta charset="utf-8"><body style="font-family:system-ui,sans-serif;padding:32px;color:#0a0f1f">'
+            . '<h1 style="font-size:20px">Le PDF n\'a pas pu être généré</h1>'
+            . ($showErrors ? '<p style="color:#b4232a">' . e($e->getMessage()) . '</p><p style="color:#6b7285">Vérifiez que le dossier <code>uploads/</code> est accessible en écriture et que le dossier <code>utilitaires/FPDF</code> a bien été envoyé sur le serveur.</p>' : '<p>Merci de réessayer plus tard ou de nous contacter.</p>')
+            . '</body>';
+        return;
+    }
+    ob_end_clean();
+    header_remove('Pragma');
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . crm_pdf_filename($doc) . '"');
+    header('Content-Length: ' . strlen($bytes));
+    header('Cache-Control: private, no-cache');
+    header('X-Robots-Tag: noindex');
+    echo $bytes;
+}
+
+function crm_pdf_filename(array $doc): string {
+    return slugify(crm_doc_label($doc['doc_type']) . '-' . ($doc['number'] ?: 'brouillon-' . $doc['id'])) . '.pdf';
 }
 
 /**
@@ -349,7 +514,7 @@ function crm_copy_document(int $sourceId, string $newType, array $override = [])
     $data = array_merge([
         'doc_type' => $newType, 'status' => 'draft', 'client_id' => $src['client_id'], 'title' => $src['title'],
         'intro' => $src['intro'], 'notes' => null, 'issue_date' => date('Y-m-d'), 'service_date' => $src['service_date'],
-        'currency' => $currency, 'discount_pct' => $src['discount_pct'], 'vat_mention' => $src['vat_mention'],
+        'currency' => $currency, 'discount_pct' => $src['discount_pct'], 'vat_mention' => $src['vat_mention'], 'operation_type' => $src['operation_type'] ?? 'services',
         'source_id' => $sourceId, 'created_by' => $_SESSION['admin_id'] ?? null, 'is_deposit' => 0,
     ], $override);
     if (!array_key_exists('due_date', $override)) {
@@ -403,19 +568,21 @@ function crm_template_vars(array $doc): array {
  */
 function crm_send_email(array $doc, string $to, string $subject, string $body): bool {
     require_once ROOT_PATH . '/includes/mailer.php';
-    require_once ROOT_PATH . '/includes/crm_pdf.php';
-    $tmp = tempnam(sys_get_temp_dir(), 'neo');
-    $pdfPath = $tmp . '.pdf';
-    @rename($tmp, $pdfPath);
-    file_put_contents($pdfPath, crm_pdf((int) $doc['id']));
+    $pdfPath = crm_storage_dir('tmp') . '/' . bin2hex(random_bytes(8)) . '.pdf';
+    try {
+        file_put_contents($pdfPath, crm_pdf_bytes($doc));
+    } catch (Throwable $e) {
+        error_log('NEOSEN: PDF non joint à l\'email — ' . $e->getMessage());
+        $pdfPath = '';
+    }
     $html = mail_layout($subject, '<div style="font-size:15px;line-height:1.7">' . nl2br(e($body)) . '</div>'
         . ($doc['public_token'] ? '<p style="margin-top:24px"><a href="' . e(crm_public_url($doc)) . '" style="display:inline-block;background:' . e(setting('color_primary')) . ';color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Consulter le document</a></p>' : ''));
     $ok = send_mail($to, $subject, $html, [
         'text' => $body,
         'reply_to' => [setting('contact_email'), site_name()],
-        'attachments' => [[$pdfPath, crm_pdf_filename($doc)]],
+        'attachments' => $pdfPath ? [[$pdfPath, crm_pdf_filename($doc)]] : [],
     ]);
-    @unlink($pdfPath);
+    if ($pdfPath) @unlink($pdfPath);
     return $ok;
 }
 

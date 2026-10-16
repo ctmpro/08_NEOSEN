@@ -167,6 +167,7 @@ $reminders = db()->prepare('SELECT * FROM crm_reminders WHERE document_id = ? OR
 $reminders->execute([$id]);
 $reminders = $reminders->fetchAll();
 $isDraft = $doc['status'] === 'draft';
+$warnings = $type === 'credit_note' ? [] : crm_client_warnings($client, $type);
 
 // Email d'envoi pré-rempli
 $tplKey = $type === 'quote' ? 'billing_send_quote' : 'billing_send_invoice';
@@ -181,13 +182,20 @@ if ($type === 'credit_note') {
 admin_header(crm_doc_title($doc), $type === 'quote' ? 'quotes' : 'invoices', array_filter([
     [icon('arrow-left', 'icon') . 'Retour', admin_url('documents.php', ['type' => $type === 'quote' ? 'quote' : 'invoice']), 'btn-ghost'],
     $isDraft ? [icon('edit', 'icon') . 'Modifier', admin_url('document-edit.php', ['id' => $id]), 'btn-ghost'] : null,
-    [icon('upload', 'icon') . 'PDF', admin_url('document-pdf.php', ['id' => $id, 'download' => 1]), 'btn-ghost'],
 ]));
 ?>
 <div class="doc-layout">
-    <section class="card card--flush doc-preview">
-        <iframe src="<?= e(admin_url('document-pdf.php', ['id' => $id])) ?>#view=FitH" title="Aperçu du document"></iframe>
-    </section>
+    <div class="doc-preview-wrap">
+        <?php if ($warnings): ?>
+        <div class="alert alert-warning"><strong>À vérifier avant <?= $isDraft ? 'émission' : 'le prochain document' ?> :</strong><ul class="warn-list"><?php foreach ($warnings as $w): ?><li><?= e($w) ?></li><?php endforeach; ?></ul><a class="link" href="<?= e(admin_url('client-edit.php', ['id' => $client['id']])) ?>">Compléter la fiche client</a></div>
+        <?php endif; ?>
+        <div class="doc-toolbar">
+            <a class="btn btn-sm btn-ghost" href="<?= e(admin_url('document-pdf.php', ['id' => $id])) ?>" target="_blank" rel="noopener"><?= icon('external') ?> Ouvrir le PDF</a>
+            <a class="btn btn-sm btn-ghost" href="<?= e(admin_url('document-pdf.php', ['id' => $id, 'download' => 1])) ?>"><?= icon('upload') ?> Télécharger</a>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="window.print()"><?= icon('edit') ?> Imprimer</button>
+        </div>
+        <?php partial('document-sheet', ['doc' => $doc]); ?>
+    </div>
 
     <aside class="doc-side">
         <section class="card">
@@ -205,6 +213,9 @@ admin_header(crm_doc_title($doc), $type === 'quote' ? 'quotes' : 'invoices', arr
                 <div><dt>Envoi</dt><dd><?= $doc['sent_at'] ? 'Envoyé le ' . e(date('d/m/Y', strtotime($doc['sent_at']))) : '<span class="muted">Non envoyé</span>' ?></dd></div>
                 <?php if ($doc['accepted_at']): ?><div><dt>Accepté</dt><dd><?= e(date('d/m/Y', strtotime($doc['accepted_at']))) ?><?= $doc['accepted_by'] ? ' — ' . e($doc['accepted_by']) : '' ?></dd></div><?php endif; ?>
             </dl>
+            <?php if (!empty($doc['pdf_hash'])): ?>
+            <p class="archive-note"><?= icon('shield') ?> PDF définitif archivé le <?= e(date('d/m/Y', strtotime($doc['issue_date']))) ?> — empreinte <code title="SHA-256 : <?= e($doc['pdf_hash']) ?>"><?= e(substr($doc['pdf_hash'], 0, 16)) ?>…</code></p>
+            <?php endif; ?>
             <?php if ($doc['public_token']): ?>
             <div class="copy-field"><input type="text" readonly value="<?= e(crm_public_url($doc)) ?>" aria-label="Lien client"><button type="button" class="btn btn-sm btn-ghost" data-copy>Copier</button></div>
             <p class="help">Lien de consultation<?= $type === 'quote' ? ' et d\'acceptation en ligne' : '' ?> pour le client.</p>

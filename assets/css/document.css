@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Aperçu HTML des devis / factures / avoirs (admin + page client)
+   ========================================================================== */
+.sheet {
+    --sp: var(--sheet-primary, #3B4BFF);
+    position: relative; overflow: hidden; max-width: 860px; margin: 0 auto; padding: clamp(20px, 5vw, 56px);
+    background: #fff; color: #0f1424; border-radius: 14px; box-shadow: 0 1px 3px rgba(15, 20, 36, .06), 0 24px 48px -24px rgba(15, 20, 36, .25);
+    font-family: "Inter", Helvetica, Arial, sans-serif; font-size: 13.5px; line-height: 1.5;
+}
+.sheet p { margin: 0; }
+.sheet-watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-24deg); font-size: clamp(60px, 12vw, 130px); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(229, 72, 77, .08); pointer-events: none; white-space: nowrap; }
+.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.sheet-logo { display: block; height: 38px; width: auto; margin-bottom: 14px; }
+.sheet-brand { display: block; font-size: 22px; margin-bottom: 12px; }
+.sheet-seller p { color: #6e7587; font-size: 12.5px; }
+.sheet-seller p strong { color: #0f1424; font-size: 13.5px; }
+.sheet-ref { text-align: right; margin-left: auto; }
+.sheet-title { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: .02em; color: var(--sp); line-height: 1.1; }
+.sheet-number { font-weight: 700; margin: 4px 0 10px !important; }
+.sheet-meta { display: grid; gap: 2px; margin: 0; font-size: 12.5px; }
+.sheet-meta div { display: flex; justify-content: flex-end; gap: 16px; }
+.sheet-meta dt { color: #6e7587; }
+.sheet-meta dd { margin: 0; min-width: 96px; text-align: right; }
+.sheet-client { margin: 0 0 26px auto; max-width: 340px; padding: 14px 18px; background: #f6f7fb; border-radius: 8px; }
+.sheet-client small { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #6e7587; }
+.sheet-client strong { display: block; font-size: 15px; margin: 2px 0 2px; }
+.sheet-client p { color: #464c5c; font-size: 12.5px; }
+.sheet-object { margin: 0 0 6px; font-size: 15px; }
+.sheet-intro { color: #464c5c; margin-bottom: 14px !important; }
+.sheet-lines { width: 100%; border-collapse: collapse; margin: 10px 0 18px; }
+.sheet-lines th { padding: 9px 10px; background: var(--sp); color: #fff; font-size: 11.5px; font-weight: 700; text-align: right; }
+.sheet-lines th:first-child { text-align: left; border-radius: 6px 0 0 6px; }
+.sheet-lines th:last-child { border-radius: 0 6px 6px 0; }
+.sheet-lines td { padding: 10px; border-bottom: 1px solid #ebedf3; text-align: right; vertical-align: top; white-space: nowrap; }
+.sheet-lines td:first-child { text-align: left; white-space: normal; width: 52%; }
+.sheet-lines tbody tr:nth-child(even):not(.sheet-section) td { background: #fafbfd; }
+.sheet-lines small { display: block; color: #6e7587; font-size: 11.5px; font-weight: 400; }
+.sheet-section td { padding-top: 14px; font-weight: 700; color: var(--sp); text-align: left !important; }
+.sheet-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; }
+.sheet-notes { flex: 1 1 260px; display: grid; gap: 12px; align-content: start; font-size: 12.5px; color: #464c5c; }
+.sheet-vat { font-style: italic; color: #6e7587; }
+.sheet-sign { display: grid; gap: 2px; min-height: 90px; padding: 10px 12px; border: 1px dashed #d5d8e2; border-radius: 8px; }
+.sheet-sign small { color: #6e7587; }
+.sheet-accepted { font-weight: 700; color: #12a150; }
+.sheet-totals { flex: 0 1 320px; margin: 0 0 0 auto; display: grid; gap: 4px; }
+.sheet-totals div { display: flex; justify-content: space-between; gap: 16px; }
+.sheet-totals dt { color: #6e7587; }
+.sheet-totals dd { margin: 0; white-space: nowrap; }
+.sheet-grand { margin: 6px 0; padding: 10px 12px; background: var(--sp); border-radius: 8px; }
+.sheet-grand dt, .sheet-grand dd { color: #fff !important; font-weight: 800; font-size: 15px; }
+.sheet-small { font-size: 12.5px; }
+.sheet-terms { margin-top: 26px; font-size: 11.5px; color: #6e7587; }
+.sheet-terms strong { display: block; color: #0f1424; font-size: 12.5px; margin-bottom: 4px; }
+.sheet-foot { margin-top: 28px; padding-top: 10px; border-top: 1px solid #e6e8f0; font-size: 10.5px; color: #8a90a2; }
+@media (max-width: 640px) {
+    .sheet { font-size: 13px; border-radius: 10px; }
+    .sheet-ref { text-align: left; margin-left: 0; }
+    .sheet-meta div { justify-content: space-between; }
+    .sheet-client { margin-left: 0; max-width: none; }
+    .sheet-lines thead { display: none; }
+    .sheet-lines tr { display: block; padding: 10px 0; border-bottom: 1px solid #ebedf3; }
+    .sheet-lines td { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border: 0; background: none !important; width: auto !important; white-space: normal; }
+    .sheet-lines td::before { content: attr(data-label); color: #6e7587; font-size: 12px; }
+    .sheet-lines td:first-child { display: block; }
+    .sheet-lines td:first-child::before { content: none; }
+    .sheet-totals { flex-basis: 100%; }
+}
+@media print {
+    body * { visibility: hidden; }
+    .sheet, .sheet * { visibility: visible; }
+    .sheet { position: absolute; left: 0; top: 0; box-shadow: none; max-width: none; }
+}

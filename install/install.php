@@ -67,12 +67,9 @@ out("✔ Connecté à MySQL ({$host}/{$name})");
 /* ---------------------------------------------------------------
  * 2. Schéma
  * --------------------------------------------------------------- */
-$schema = file_get_contents(__DIR__ . '/schema.sql');
-$schema = preg_replace('/^\s*--.*$/m', '', $schema);
-foreach (array_filter(array_map('trim', explode(';', $schema))) as $statement) {
-    $pdo->exec($statement);
-}
-out('✔ Tables créées / vérifiées');
+require_once dirname(__DIR__) . '/includes/migrations.php';
+db_migrate($pdo);
+out('✔ Tables créées / mises à jour (version ' . DB_VERSION . ')');
 
 // Le reste du code applicatif utilise db()
 require_once __DIR__ . '/../config/database.php';

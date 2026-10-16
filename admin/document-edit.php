@@ -37,6 +37,7 @@ if (is_post()) {
         'discount_pct' => $discount,
         'deposit_pct' => $type === 'quote' ? max(0, min(100, (float) str_replace(',', '.', post('deposit_pct', '0')))) : 0,
         'vat_mention' => post('vat_mention') ?: null,
+        'operation_type' => array_key_exists(post('operation_type'), crm_operation_types()) ? post('operation_type') : 'services',
     ];
     if (!$client) $errors[] = 'Choisissez un client.';
     $lines = array_values((array) ($_POST['lines'] ?? []));
@@ -62,6 +63,9 @@ if (is_post()) {
                 redirect(admin_url('document-edit.php', ['id' => $id]));
             }
             flash('success', crm_issued_message($type));
+            if ($type !== 'quote' && ($w = crm_client_warnings(crm_client($clientId), $type))) {
+                flash('warning', 'Attention : ' . implode(' ', $w));
+            }
             redirect(admin_url('document.php', $next === 'send' ? ['id' => $id, 'send' => 1] : ['id' => $id]));
         }
         flash('success', 'Brouillon enregistré.');
@@ -84,7 +88,7 @@ $d = $doc ?? [
 $v = fn($k) => $d[$k] ?? '';
 $formLines = $formLines ?? ($id ? crm_doc_lines($id) : [['line_type' => 'item', 'description' => '', 'details' => '', 'quantity' => 1, 'unit' => 'forfait', 'unit_price' => '', 'vat_rate' => setting('billing_default_vat', 20), 'discount_pct' => 0]]);
 
-$clients = db()->query('SELECT id, company, first_name, last_name, kind, currency FROM crm_clients WHERE is_archived = 0 ORDER BY COALESCE(company, last_name)')->fetchAll();
+$clients = db()->query('SELECT * FROM crm_clients WHERE is_archived = 0 ORDER BY COALESCE(company, last_name)')->fetchAll();
 $items = db()->query('SELECT * FROM crm_items WHERE is_active = 1 ORDER BY sort_order, name')->fetchAll();
 $vatRates = setting_lines('billing_vat_rates') ?: ['20', '0'];
 $vatMentions = setting_lines('billing_vat_mentions');
@@ -109,16 +113,18 @@ admin_header($id ? 'Modifier le brouillon — ' . $label : ($type === 'invoice' 
                     <select id="f-client_id" name="client_id" required data-client-select>
                         <option value="">— Choisir —</option>
                         <?php foreach ($clients as $c): ?>
-                        <option value="<?= (int) $c['id'] ?>" data-currency="<?= e($c['currency']) ?>"<?= (int) $c['id'] === (int) $v('client_id') ? ' selected' : '' ?>><?= e(crm_client_name($c)) ?><?= $c['kind'] === 'prospect' ? ' (prospect)' : '' ?></option>
+                        <option value="<?= (int) $c['id'] ?>" data-currency="<?= e($c['currency']) ?>" data-warnings="<?= e(json_encode($type === 'credit_note' ? [] : crm_client_warnings($c, $type), JSON_UNESCAPED_UNICODE)) ?>"<?= (int) $c['id'] === (int) $v('client_id') ? ' selected' : '' ?>><?= e(crm_client_name($c)) ?><?= $c['kind'] === 'prospect' ? ' (prospect)' : '' ?></option>
                         <?php endforeach; ?>
                     </select>
                     <p class="help"><a class="link" href="<?= e(admin_url('client-edit.php')) ?>" target="_blank">+ Nouveau client</a></p>
                 </div>
+                <div class="alert alert-warning span-2" data-client-warnings hidden></div>
                 <?= f_text('title', 'Objet', $v('title'), ['placeholder' => 'Ex : Création du site vitrine']) ?>
                 <?= f_text('issue_date', 'Date', $v('issue_date'), ['type' => 'date']) ?>
                 <?= f_text('due_date', $type === 'quote' ? 'Valable jusqu\'au' : 'Date d\'échéance', $v('due_date'), ['type' => 'date']) ?>
                 <?= f_text('service_date', 'Date ou période d\'exécution', $v('service_date'), ['placeholder' => 'Ex : octobre 2026, du 01/10 au 15/11/2026']) ?>
                 <?= f_select('currency', 'Devise', ['EUR' => 'Euro (€)', 'XOF' => 'Franc CFA (FCFA)'], $v('currency')) ?>
+                <?= f_select('operation_type', 'Nature de l\'opération', crm_operation_types(), $v('operation_type') ?: 'services', ['help' => 'Mention imprimée sur le document (réforme de la facturation électronique).']) ?>
             </div>
             <?= f_textarea('intro', 'Texte d\'introduction (optionnel)', $v('intro'), ['rows' => 2]) ?>
         </section>

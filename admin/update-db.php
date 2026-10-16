@@ -7,11 +7,9 @@ require_admin('superadmin');
 if (!is_post() || !csrf_check()) {
     redirect(admin_url());
 }
-$schema = preg_replace('/^\s*--.*$/m', '', (string) file_get_contents(ROOT_PATH . '/install/schema.sql'));
+require_once ROOT_PATH . '/includes/migrations.php';
 try {
-    foreach (array_filter(array_map('trim', explode(';', $schema))) as $statement) {
-        db()->exec($statement);
-    }
+    db_migrate(db());
     flash('success', 'Base de données mise à jour.');
 } catch (Throwable $e) {
     error_log('NEOSEN: mise à jour du schéma — ' . $e->getMessage());

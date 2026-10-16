@@ -9,8 +9,10 @@ require_once __DIR__ . '/form.php';
 require_once __DIR__ . '/layout.php';
 require_once ROOT_PATH . '/includes/crm.php';
 
+require_once ROOT_PATH . '/includes/migrations.php';
+db_migrate_if_needed(db());
+
 header('X-Robots-Tag: noindex, nofollow');
-header('X-Frame-Options: SAMEORIGIN');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
 /** URL d'une page du back-office. */

@@ -320,3 +320,18 @@
         });
     }
 })();
+
+/* Avertissements client (SIREN, TVA, adresse) dans l'éditeur de document */
+(() => {
+    const sel = document.querySelector('[data-client-select]');
+    const box = document.querySelector('[data-client-warnings]');
+    if (!sel || !box) return;
+    const show = () => {
+        let list = [];
+        try { list = JSON.parse(sel.selectedOptions[0]?.dataset.warnings || '[]'); } catch (e) {}
+        box.hidden = !list.length;
+        box.innerHTML = list.length ? '<strong>À compléter dans la fiche client :</strong><ul class="warn-list">' + list.map(w => `<li>${w.replace(/</g, '&lt;')}</li>`).join('') + `</ul><a class="link" target="_blank" href="client-edit.php?id=${sel.value}">Compléter la fiche</a>` : '';
+    };
+    sel.addEventListener('change', show);
+    show();
+})();
