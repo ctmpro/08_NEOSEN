@@ -260,7 +260,7 @@ return [
             'company_siren'      => ['type' => 'text', 'label' => 'SIREN', 'default' => '131 568 255'],
             'company_siret'      => ['type' => 'text', 'label' => 'SIRET (établissement principal)', 'default' => '131 568 255 00015'],
             'company_euid'       => ['type' => 'text', 'label' => 'Numéro EUID', 'default' => 'FR7501.131568255'],
-            'company_vat'        => ['type' => 'text', 'label' => 'N° de TVA intracommunautaire', 'default' => '', 'help' => 'À renseigner dès réception (espace professionnel impots.gouv.fr).'],
+            'company_vat'        => ['type' => 'text', 'label' => 'N° de TVA intracommunautaire', 'default' => 'FR40131568255'],
             'company_activity'   => ['type' => 'textarea', 'label' => 'Activité (objet)', 'default' => 'Conception, développement de logiciels et outils informatiques, ainsi que leur exploitation et maintenance. Conseil en informatique, en programmation et en stratégie digitale, et réalisation de prestations associées.'],
             'company_director'   => ['type' => 'text', 'label' => 'Directeur de la publication', 'default' => 'Cheikh Tidiane Mbaye, Président'],
             'company_founded'    => ['type' => 'text', 'label' => 'Date de création (AAAA-MM-JJ)', 'default' => '2026-10-12', 'help' => 'Utilisée dans les données structurées (SEO).'],
