@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -37,6 +37,16 @@ function db_migrate(PDO $pdo): void {
     }
     // Réalisations ajoutées après l'installation initiale (insérées si absentes)
     db_add_seed_projects($pdo, ['nioulink', 'afamshop']);
+    // v5 : technologies de NiouLink précisées (seulement si la fiche n'a pas été modifiée entre-temps)
+    $pdo->prepare('UPDATE projects SET technologies = ? WHERE slug = ? AND technologies = ?')
+        ->execute(['React Native, Expo, iOS, Android, Application web, API REST, Assistant IA, Mobile money', 'nioulink', 'iOS, Android, Application web, API REST, Assistant IA, Mobile money']);
+    // v5 : « Expo » ajouté aux technologies mobiles (si absent)
+    if ((int) $pdo->query("SELECT COUNT(*) FROM technologies")->fetchColumn() > 0
+        && !(int) $pdo->query("SELECT COUNT(*) FROM technologies WHERE name = 'Expo'")->fetchColumn()) {
+        $after = $pdo->query("SELECT sort_order, category FROM technologies WHERE name = 'React Native' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+        $pdo->prepare('INSERT INTO technologies (name, category, sort_order) VALUES (?, ?, ?)')
+            ->execute(['Expo', $after['category'] ?? 'Mobile', ($after['sort_order'] ?? 100) + 5]);
+    }
     $pdo->prepare("INSERT INTO settings (setting_key, lang, setting_value) VALUES ('db_version', 'fr', ?)
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([(string) DB_VERSION]);
 }

@@ -156,12 +156,12 @@ return [
             'year' => 2026,
             'is_featured' => 1,
             'short_description' => "Conception de NiouLink, l'application du couple : un espace privé à deux pour s'organiser, jouer, partager ses souvenirs et grandir ensemble, sur iPhone, Android et navigateur.",
-            'long_description' => "<p>NiouLink est une application mobile dédiée aux couples. Elle réunit dans un même espace privé tout ce qui fait la vie à deux : l'organisation du quotidien, les souvenirs, les moments de complicité et l'accompagnement quand le couple traverse une période difficile.</p><p>Disponible sur iPhone, Android et en version web, elle intègre un assistant intelligent, SAMA, plus de 1 000 jeux à deux et une communauté bienveillante.</p>",
+            'long_description' => "<p>NiouLink est une application mobile dédiée aux couples. Elle réunit dans un même espace privé tout ce qui fait la vie à deux : l'organisation du quotidien, les souvenirs, les moments de complicité et l'accompagnement quand le couple traverse une période difficile.</p><p>Développée avec React Native et Expo, elle est disponible sur iPhone, Android et en version web, à partir d'une seule base de code. Elle intègre un assistant intelligent, SAMA, plus de 1 000 jeux à deux et une communauté bienveillante.</p>",
             'need' => "Les couples dispersent leur vie commune entre plusieurs applications : agenda, messagerie, albums photo, listes de courses. Il manquait un espace unique, privé et chaleureux, pensé pour deux, qui aide aussi à mieux se comprendre au fil du temps.",
             'solution' => "NEOSEN a conçu une application complète : un espace partagé synchronisé entre les deux partenaires (agenda, courses, repas, budget, objectifs), un réseau social privé « Notre Monde » pour les souvenirs, des jeux à deux en local ou à distance, un assistant SAMA, des parcours guidés et un accès à des experts. La confidentialité est au cœur du produit : journal chiffré, aucune publicité ciblée, export et suppression des données à tout moment.",
             'features' => "Espace privé partagé à deux\nAgenda commun, courses, repas, budget et objectifs\n« Notre Monde » : albums, capsules souvenirs et Cercle familial\nPlus de 1 000 jeux à deux, sur un téléphone ou à distance\nMots doux et séries d'amour\nAssistant intelligent SAMA\nParcours guidés et journal intime chiffré\nCommunauté modérée et prise de rendez-vous avec des experts\nOffre cadeau Premium Duo payable par mobile money ou carte\nApplications iOS et Android, et version web",
             'results' => "Une application grand public publiée sur l'App Store et Google Play, avec une version web, qui démontre la capacité de NEOSEN à concevoir un produit mobile complet, de l'expérience utilisateur à la monétisation.",
-            'technologies' => 'iOS, Android, Application web, API REST, Assistant IA, Mobile money',
+            'technologies' => 'React Native, Expo, iOS, Android, Application web, API REST, Assistant IA, Mobile money',
             'images' => ['nioulink-1.webp', 'nioulink-2.webp', 'nioulink-3.webp', 'nioulink-4.webp', 'nioulink-mobile.webp'],
         ],
         [
@@ -224,7 +224,7 @@ return [
     /* ------------------------------------------------------------------ */
     'technologies' => [
         'Web'    => ['HTML5', 'CSS3', 'JavaScript', 'PHP', 'MySQL'],
-        'Mobile' => ['React Native', 'Capacitor', 'API REST'],
+        'Mobile' => ['React Native', 'Expo', 'Capacitor', 'API REST'],
         'Data'   => ['SQL Server', 'SSIS', 'Power BI', 'Data Warehouse', 'SQL'],
     ],
 ];
