@@ -755,6 +755,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
     .projects-grid .project-card { grid-column: span 2; }
     .projects-grid .project-card:nth-child(-n+2) { grid-column: span 3; }
     .projects-grid .project-card:nth-child(n+3) .project-title { font-size: 20px; }
+    /* Dernière ligne incomplète : les cartes restantes s'élargissent pour ne pas laisser de trou */
+    .projects-grid .project-card:nth-child(3n):nth-last-child(2),
+    .projects-grid .project-card:nth-child(3n):nth-last-child(2) + .project-card,
+    .projects-grid .project-card:nth-child(3n):last-child { grid-column: span 3; }
     .gallery { grid-template-columns: repeat(3, 1fr); }
     .gallery-item:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
     .footer-grid { grid-template-columns: 1.6fr 1fr 1.2fr 1.3fr; gap: 48px; }

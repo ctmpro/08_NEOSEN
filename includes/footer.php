@@ -73,7 +73,7 @@ $wa = whatsapp_link();
         <div class="footer-bottom">
             <div>
                 <p>© <?= e(copyright_text()) ?></p>
-                <?php $legalLine = array_filter([setting('company_capital') ? company_name() . ' au capital de ' . setting('company_capital') : '', setting('company_rcs'), setting('company_address')]); ?>
+                <?php $legalLine = array_filter([company_name(), setting('company_rcs'), setting('company_address')]); ?>
                 <?php if ($legalLine): ?><p class="footer-legal"><?= e(implode(' · ', $legalLine)) ?></p><?php endif; ?>
             </div>
             <ul>

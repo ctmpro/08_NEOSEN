@@ -67,15 +67,15 @@ out("✔ Connecté à MySQL ({$host}/{$name})");
 /* ---------------------------------------------------------------
  * 2. Schéma
  * --------------------------------------------------------------- */
-require_once dirname(__DIR__) . '/includes/migrations.php';
-db_migrate($pdo);
-out('✔ Tables créées / mises à jour (version ' . DB_VERSION . ')');
-
 // Le reste du code applicatif utilise db()
 require_once __DIR__ . '/../config/database.php';
 require_once ROOT_PATH . '/includes/functions.php';
 require_once ROOT_PATH . '/includes/i18n.php';
 require_once ROOT_PATH . '/includes/uploads.php';
+require_once ROOT_PATH . '/includes/migrations.php';
+
+db_migrate($pdo);
+out('✔ Tables créées / mises à jour (version ' . DB_VERSION . ')');
 
 $seed = require __DIR__ . '/seed.php';
 $lang = APP_DEFAULT_LANG;
@@ -101,28 +101,8 @@ if ($count('project_categories') === 0) {
 }
 
 if ($count('projects') === 0) {
-    $cats = $pdo->query('SELECT slug, id FROM project_categories')->fetchAll(PDO::FETCH_KEY_PAIR);
-    $stmt = $pdo->prepare('INSERT INTO projects (lang, name, slug, category_id, category_label, client, url, year, short_description, long_description, need, solution, features, results, technologies, main_image, is_featured, is_visible, status, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,"published",?)');
-    $img = $pdo->prepare('INSERT INTO project_images (project_id, path, alt, sort_order) VALUES (?,?,?,?)');
     foreach ($seed['projects'] as $i => $p) {
-        // Copie des captures dans /uploads/projects/{slug}
-        $paths = [];
-        foreach ($p['images'] as $file) {
-            $src = __DIR__ . '/seed-images/' . $file;
-            if (is_file($src)) {
-                $res = process_image_file($src, $file, detect_mime($src), 'projects/' . $p['slug'], 1600);
-                if (isset($res['path'])) $paths[] = $res['path'];
-            }
-        }
-        $stmt->execute([
-            $lang, $p['name'], $p['slug'], $cats[$p['category']] ?? null, $p['category_label'], $p['client'], $p['url'], $p['year'],
-            $p['short_description'], $p['long_description'], $p['need'], $p['solution'], $p['features'], $p['results'], $p['technologies'],
-            $paths[0] ?? null, $p['is_featured'], ($i + 1) * 10,
-        ]);
-        $pid = (int) $pdo->lastInsertId();
-        foreach (array_slice($paths, 1) as $k => $path) {
-            $img->execute([$pid, $path, $p['name'] . ' — capture ' . ($k + 1), ($k + 1) * 10]);
-        }
+        db_insert_seed_project($pdo, $p, ($i + 1) * 10, $lang);
     }
     out('✔ Réalisations créées (' . count($seed['projects']) . ') avec leurs captures');
 }

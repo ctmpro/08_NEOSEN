@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -35,8 +35,56 @@ function db_migrate(PDO $pdo): void {
             $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
         }
     }
+    // Réalisations ajoutées après l'installation initiale (insérées si absentes)
+    db_add_seed_projects($pdo, ['nioulink', 'afamshop']);
     $pdo->prepare("INSERT INTO settings (setting_key, lang, setting_value) VALUES ('db_version', 'fr', ?)
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([(string) DB_VERSION]);
+}
+
+/**
+ * Insère une réalisation des données initiales (install/seed.php) avec ses captures.
+ */
+function db_insert_seed_project(PDO $pdo, array $p, int $sortOrder, string $lang = 'fr'): void {
+    $seedDir = dirname(__DIR__) . '/install/seed-images';
+    $paths = [];
+    foreach ($p['images'] as $file) {
+        $src = $seedDir . '/' . $file;
+        if (is_file($src) && function_exists('process_image_file')) {
+            $res = process_image_file($src, $file, detect_mime($src), 'projects/' . $p['slug'], 1600);
+            if (isset($res['path'])) $paths[] = $res['path'];
+        }
+    }
+    $cat = $pdo->prepare('SELECT id FROM project_categories WHERE slug = ? AND lang = ?');
+    $cat->execute([$p['category'], $lang]);
+    $pdo->prepare('INSERT INTO projects (lang, name, slug, category_id, category_label, client, url, year, short_description, long_description, need, solution, features, results, technologies, main_image, is_featured, is_visible, status, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,"published",?)')
+        ->execute([$lang, $p['name'], $p['slug'], $cat->fetchColumn() ?: null, $p['category_label'], $p['client'], $p['url'], $p['year'],
+            $p['short_description'], $p['long_description'], $p['need'], $p['solution'], $p['features'], $p['results'], $p['technologies'],
+            $paths[0] ?? null, $p['is_featured'], $sortOrder]);
+    $pid = (int) $pdo->lastInsertId();
+    $img = $pdo->prepare('INSERT INTO project_images (project_id, path, alt, sort_order) VALUES (?,?,?,?)');
+    foreach (array_slice($paths, 1) as $k => $path) {
+        $img->execute([$pid, $path, $p['name'] . ' — capture ' . ($k + 1), ($k + 1) * 10]);
+    }
+}
+
+/**
+ * Ajoute en tête de liste les réalisations indiquées si elles n'existent pas encore.
+ */
+function db_add_seed_projects(PDO $pdo, array $slugs): void {
+    $seedFile = dirname(__DIR__) . '/install/seed.php';
+    if (!is_file($seedFile)) return;
+    // Uniquement sur un site déjà installé (sinon l'installateur s'en charge)
+    if ((int) $pdo->query('SELECT COUNT(*) FROM projects')->fetchColumn() === 0) return;
+    $seed = require $seedFile;
+    $exists = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE slug = ?');
+    $min = (int) $pdo->query('SELECT COALESCE(MIN(sort_order), 10) FROM projects')->fetchColumn();
+    foreach (array_reverse($seed['projects']) as $p) {
+        if (!in_array($p['slug'], $slugs, true)) continue;
+        $exists->execute([$p['slug']]);
+        if ((int) $exists->fetchColumn() > 0) continue;
+        $min -= 10;
+        db_insert_seed_project($pdo, $p, $min);
+    }
 }
 
 /** Lance les migrations si la base n'est pas à jour (silencieux en cas d'échec, consigné dans les logs). */
