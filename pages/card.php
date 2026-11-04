@@ -141,6 +141,7 @@ $sent     = isset($_GET['merci']);
 $siteHost = preg_replace('#^https?://(www\.)?#', '', rtrim($card['website'] ?: setting('site_domain') ?: site_url(), '/'));
 $logo     = (string) (setting('logo_light') ?: setting('logo'));
 $theme    = array_key_exists($card['theme'], card_themes()) ? $card['theme'] : 'nuit';
+$theme    = ['epure' => 'clair', 'tech' => 'nuit', 'diagonale' => 'degrade'][$theme] ?? $theme; // la page mobile reprend l'ambiance de la carte
 ?><!doctype html>
 <html lang="fr">
 <head>

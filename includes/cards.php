@@ -8,6 +8,9 @@ function card_themes(): array {
         'nuit'    => 'Nuit — fond sombre, accents dégradés',
         'clair'   => 'Clair — fond blanc, bande dégradée',
         'degrade' => 'Dégradé — recto en dégradé bleu-turquoise',
+        'epure'     => 'Épuré — blanc, typographie minimaliste',
+        'tech'      => 'Tech — fond sombre quadrillé, esprit code',
+        'diagonale' => 'Diagonale — coupe en dégradé, moderne',
     ];
 }
 
