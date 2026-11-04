@@ -95,7 +95,7 @@ abstract class CardCanvas {
         $this->clip($x, $y, $w, $h);
         for ($i = 0; $i < $steps; $i++) {
             $a = $total * $i / $steps;
-            $b = $total * ($i + 1) / $steps + 0.05;
+            $b = $total * ($i + 1) / $steps + 0.3;
             $this->fillPoly([[$x + $a, $y], [$x + $b, $y], [$x + $b - $h, $y + $h], [$x + $a - $h, $y + $h]], card_mix($c1, $c2, $i / ($steps - 1)));
         }
         $this->unclip();
