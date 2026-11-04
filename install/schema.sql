@@ -350,4 +350,49 @@ CREATE TABLE IF NOT EXISTS crm_reminders (
     CONSTRAINT fk_rem_doc FOREIGN KEY (document_id) REFERENCES crm_documents(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- CARTES DE VISITE : QR code fixe, page modifiable, statistiques
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS cards (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code            VARCHAR(40) NOT NULL COMMENT 'Adresse courte : /c/{code}',
+    label           VARCHAR(120) NOT NULL COMMENT 'Nom interne',
+    mode            VARCHAR(10) NOT NULL DEFAULT 'page' COMMENT 'page ou redirect',
+    redirect_url    VARCHAR(255) NULL,
+    campaign        VARCHAR(120) NULL COMMENT 'Origine des contacts (salon, événement…)',
+    person_name     VARCHAR(120) NULL,
+    job_title       VARCHAR(120) NULL,
+    company         VARCHAR(120) NULL,
+    tagline         VARCHAR(190) NULL,
+    intro           TEXT NULL,
+    phone           VARCHAR(40) NULL,
+    whatsapp        VARCHAR(40) NULL,
+    email           VARCHAR(190) NULL,
+    website         VARCHAR(190) NULL,
+    address         VARCHAR(190) NULL,
+    photo           VARCHAR(255) NULL,
+    cta_label       VARCHAR(120) NULL COMMENT 'Phrase du verso, à côté du QR code',
+    theme           VARCHAR(20) NOT NULL DEFAULT 'nuit',
+    show_services   TINYINT(1) NOT NULL DEFAULT 1,
+    show_projects   TINYINT(1) NOT NULL DEFAULT 1,
+    show_form       TINYINT(1) NOT NULL DEFAULT 1,
+    is_active       TINYINT(1) NOT NULL DEFAULT 1,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_cards_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS card_scans (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    card_id     INT UNSIGNED NOT NULL,
+    event       VARCHAR(20) NOT NULL DEFAULT 'scan' COMMENT 'scan, vcard, call, whatsapp, email, lead',
+    campaign    VARCHAR(120) NULL,
+    device      VARCHAR(20) NULL,
+    ip_hash     CHAR(64) NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_scans_card (card_id, event, created_at),
+    CONSTRAINT fk_scans_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

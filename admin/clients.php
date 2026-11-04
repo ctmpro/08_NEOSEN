@@ -29,8 +29,8 @@ if (in_array($filter, ['prospect', 'client'], true)) {
     $params[] = $filter;
 }
 if ($q !== '') {
-    $where[] = '(c.company LIKE ? OR c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ? OR c.city LIKE ?)';
-    array_push($params, ...array_fill(0, 5, '%' . $q . '%'));
+    $where[] = '(c.company LIKE ? OR c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ? OR c.city LIKE ? OR c.source LIKE ?)';
+    array_push($params, ...array_fill(0, 6, '%' . $q . '%'));
 }
 if ($view === 'pipeline') {
     $where = ['c.is_archived = 0'];

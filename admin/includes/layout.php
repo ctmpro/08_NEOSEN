@@ -22,6 +22,7 @@ function admin_menu(): array {
         ['invoices', 'documents.php?type=invoice', 'Factures & avoirs', 'tag'],
         ['reminders', 'reminders.php', 'Relances', 'clock', $toRemind],
         ['items', 'items.php', 'Catalogue', 'cube'],
+        ['cards', 'cards.php', 'Cartes de visite', 'user'],
         '— Contenus du site',
         ['projects', 'projects.php', 'Réalisations', 'image'],
         ['categories', 'categories.php', 'Catégories', 'tag'],
@@ -48,7 +49,7 @@ function admin_header(string $title, string $active = '', array $actions = []): 
     <link rel="icon" href="<?= e(media_url(setting('favicon'))) ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="<?= asset('css/admin.css') ?>">
     <style>:root{--primary:<?= e(setting('color_primary')) ?>;--accent:<?= e(setting('color_accent')) ?>;--dark:<?= e(setting('color_dark')) ?>}</style>
 </head>
@@ -89,8 +90,8 @@ function admin_header(string $title, string $active = '', array $actions = []): 
             <button class="burger" type="button" data-sidebar-toggle aria-label="Menu"><?= icon('menu') ?></button>
             <h1 class="topbar-title"><?= e($title) ?></h1>
             <div class="topbar-actions">
-                <?php foreach ($actions as [$label, $href, $style]): ?>
-                <a class="btn btn-sm <?= e($style ?? 'btn-primary') ?>" href="<?= e($href) ?>"><?= $label ?></a>
+                <?php foreach ($actions as $act): [$label, $href, $style] = $act + [2 => 'btn-primary']; ?>
+                <a class="btn btn-sm <?= e($style) ?>" href="<?= e($href) ?>"<?= !empty($act[3]) ? ' target="_blank" rel="noopener"' : '' ?>><?= $label ?></a>
                 <?php endforeach; ?>
                 <?php if ($admin): ?>
                 <a class="avatar" href="<?= e(admin_url('account.php')) ?>" title="<?= e($admin['name']) ?>"><?= e(mb_strtoupper(mb_substr($admin['name'], 0, 1))) ?></a>

@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -46,6 +46,16 @@ function db_migrate(PDO $pdo): void {
         $after = $pdo->query("SELECT sort_order, category FROM technologies WHERE name = 'React Native' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
         $pdo->prepare('INSERT INTO technologies (name, category, sort_order) VALUES (?, ?, ?)')
             ->execute(['Expo', $after['category'] ?? 'Mobile', ($after['sort_order'] ?? 100) + 5]);
+    }
+    // v6 : carte de visite NEOSEN par défaut
+    if ((int) $pdo->query('SELECT COUNT(*) FROM cards')->fetchColumn() === 0) {
+        $get = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ? AND lang = 'fr'");
+        $set = function (string $k, string $default) use ($get) { $get->execute([$k]); $v = $get->fetchColumn(); return $v !== false && $v !== '' ? (string) $v : $default; };
+        $pdo->prepare('INSERT INTO cards (code, label, person_name, job_title, company, tagline, intro, phone, whatsapp, email, website, cta_label, campaign) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+            ->execute(['neosen', 'Carte NEOSEN', 'Cheikh Tidiane MBAYE', 'CEO', 'NEOSEN', 'Web · Software · Data',
+                "Nous concevons des sites web, des applications et des solutions Data sur mesure, de l'idée à la mise en production.",
+                $set('contact_phone', '+33 7 88 40 51 21'), $set('contact_whatsapp', '+33788405121'), 'cheikh.mbaye@neosen.tech',
+                $set('site_domain', 'neosen.tech'), 'Scannez pour découvrir nos réalisations', 'Carte de visite']);
     }
     $pdo->prepare("INSERT INTO settings (setting_key, lang, setting_value) VALUES ('db_version', 'fr', ?)
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([(string) DB_VERSION]);

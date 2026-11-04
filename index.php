@@ -52,6 +52,8 @@ $routes = [
     'politique-de-confidentialite'=> 'privacy',
     'document/{slug}'             => 'document',
     'document/{slug}/pdf'         => 'document',
+    'c/{slug}'                    => 'card',
+    'c/{slug}/{action}'           => 'card',
     'sitemap.xml'                 => 'sitemap',
     'robots.txt'                  => 'robots',
 ];
