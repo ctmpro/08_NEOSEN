@@ -332,7 +332,7 @@ function crm_next_number(string $type, int $year): string {
     $stmt->execute([$type, $year]);
     $n = (int) $stmt->fetchColumn() + 1;
     $pdo->prepare('UPDATE crm_sequences SET last_number = ? WHERE doc_type = ? AND year = ?')->execute([$n, $type, $year]);
-    $prefix = trim((string) setting(crm_doc_types()[$type][2], strtoupper(substr($type, 0, 3))));
+    $prefix = trim((string) setting(crm_doc_types()[$type][2] ?? 'billing_' . $type . '_prefix', strtoupper(substr($type, 0, 3))));
     return ($prefix !== '' ? $prefix . '-' : '') . $year . '-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT);
 }
 
@@ -560,6 +560,7 @@ function crm_template_vars(array $doc): array {
         '{due_date}' => $doc['due_date'] ? date('d/m/Y', strtotime($doc['due_date'])) : '',
         '{days_late}' => (string) max(0, $days),
         '{link}' => crm_public_url($doc),
+        '{pay_link}' => $doc['doc_type'] === 'invoice' && function_exists('pay_invoice_link_url') ? pay_invoice_link_url($doc) : '',
     ];
 }
 
@@ -576,7 +577,9 @@ function crm_send_email(array $doc, string $to, string $subject, string $body): 
         $pdfPath = '';
     }
     $html = mail_layout($subject, '<div style="font-size:15px;line-height:1.7">' . nl2br(e($body)) . '</div>'
-        . ($doc['public_token'] ? '<p style="margin-top:24px"><a href="' . e(crm_public_url($doc)) . '" style="display:inline-block;background:' . e(setting('color_primary')) . ';color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Consulter le document</a></p>' : ''));
+        . ($doc['public_token'] ? '<p style="margin-top:24px"><a href="' . e(crm_public_url($doc)) . '" style="display:inline-block;background:' . e(setting('color_primary')) . ';color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Consulter le document</a>'
+            . (($payUrl = function_exists('pay_invoice_link_url') && $doc['doc_type'] === 'invoice' ? pay_invoice_link_url($doc) : '') ? ' &nbsp; <a href="' . e($payUrl) . '" style="display:inline-block;background:' . e(setting('color_accent')) . ';color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Payer en ligne</a>' : '')
+            . '</p>' : ''));
     $ok = send_mail($to, $subject, $html, [
         'text' => $body,
         'reply_to' => [setting('contact_email'), site_name()],

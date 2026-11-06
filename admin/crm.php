@@ -43,6 +43,15 @@ admin_header('Gestion — vue d\'ensemble', 'crm', [
     [icon('plus', 'icon') . 'Facture', admin_url('document-edit.php', ['type' => 'invoice']), 'btn-primary'],
 ]);
 ?>
+<div class="quick-create">
+    <a class="btn btn-ghost" href="<?= e(admin_url('document-edit.php', ['type' => 'quote'])) ?>"><?= icon('edit') ?> Nouveau devis</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('document-edit.php', ['type' => 'invoice'])) ?>"><?= icon('tag') ?> Nouvelle facture</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('receipts.php', ['new' => 1])) ?>"><?= icon('check-circle') ?> Nouveau reçu</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('payment-links.php', ['new' => 1])) ?>"><?= icon('cart') ?> Lien de paiement</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('client-edit.php')) ?>"><?= icon('users') ?> Nouveau client</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('settings.php', ['tab' => 'billing'])) ?>"><?= icon('settings') ?> Paramètres devis & factures</a>
+    <a class="btn btn-ghost" href="<?= e(admin_url('settings.php', ['tab' => 'payments'])) ?>"><?= icon('settings') ?> Paramètres paiement & reçus</a>
+</div>
 <div class="stat-grid">
     <a class="stat-card" href="<?= e(admin_url('documents.php', ['type' => 'invoice', 'year' => $y])) ?>"><span class="stat-icon"><?= icon('chart') ?></span><span class="stat-label">CA HT <?= e($monthNames[(int) date('n') - 1]) ?></span><strong class="stat-value"><?= e(crm_money_list($revMonth)) ?></strong><span class="stat-sub">Année <?= $y ?> : <?= e(crm_money_list($revYear)) ?></span></a>
     <a class="stat-card" href="<?= e(admin_url('documents.php', ['type' => 'invoice', 'status' => 'paid'])) ?>"><span class="stat-icon"><?= icon('check-circle') ?></span><span class="stat-label">Encaissé en <?= $y ?></span><strong class="stat-value"><?= e(crm_money_list(array_map('floatval', $paidYear))) ?></strong><span class="stat-sub">paiements enregistrés</span></a>

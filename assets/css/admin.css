@@ -511,3 +511,29 @@ p .icon, .small .icon { display: inline-block; vertical-align: -3px; }
 .chart-bars--days .chart-val { font-size: 10px; }
 .table--compact td, .table--compact th { padding: 8px 10px; }
 .plain-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+
+/* Paiement en ligne & reçus */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips .chip { text-decoration: none; }
+.chips .chip.is-active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.provider-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 12px; }
+.provider-list li { display: flex; gap: 12px; align-items: flex-start; }
+.provider-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; }
+.provider-dot--on { background: #16a34a; box-shadow: 0 0 0 4px rgba(22, 163, 74, .15); }
+.provider-dot--off { background: #d1d5db; }
+.help-details summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--primary); }
+.help-details .copy-field { margin-bottom: 10px; }
+.check-card { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
+.check-card input { margin-top: 4px; accent-color: var(--primary); }
+.check-card.is-off { opacity: .6; }
+.paylink-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
+.paylink-head > div:first-child { display: grid; gap: 6px; justify-items: start; }
+.paylink-qr { width: 120px; flex: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; line-height: 0; }
+.paylink-qr svg { width: 100%; height: auto; }
+.quick-create { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.receipt-row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.chip { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--ink); background: var(--white); }
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+tr.is-highlight td { background: var(--primary-soft); }
+.search-input { min-width: 240px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 14px; }
+.send-form--inline { padding: 8px 0; }

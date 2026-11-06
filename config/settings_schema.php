@@ -254,6 +254,7 @@ return [
             'billing_quote_prefix'   => ['type' => 'text', 'label' => 'Préfixe des devis', 'default' => 'DEV', 'help' => 'Numéro généré : DEV-2026-0001 (numérotation continue par année).'],
             'billing_invoice_prefix' => ['type' => 'text', 'label' => 'Préfixe des factures', 'default' => 'FAC'],
             'billing_credit_prefix'  => ['type' => 'text', 'label' => 'Préfixe des avoirs', 'default' => 'AV'],
+            'billing_receipt_prefix' => ['type' => 'text', 'label' => 'Préfixe des reçus', 'default' => 'REC'],
             'billing_currency'       => ['type' => 'select', 'label' => 'Devise par défaut', 'default' => 'EUR', 'options' => ['EUR' => 'Euro (€)', 'XOF' => 'Franc CFA (FCFA)']],
             'billing_xof_rate'       => ['type' => 'text', 'label' => 'Parité EUR → FCFA', 'default' => '655.957', 'help' => 'Utilisée pour l\'équivalence affichée sur les documents et les statistiques.'],
             'billing_vat_rates'      => ['type' => 'lines', 'label' => 'Taux de TVA proposés (%)', 'default' => "20\n10\n5.5\n2.1\n0"],
@@ -283,6 +284,37 @@ return [
             'billing_reminder_3_body'      => ['type' => 'textarea', 'label' => 'Relance 3 — message', 'default' => "Bonjour {client},\n\nLa facture {number} d'un montant restant dû de {balance} est impayée depuis {days_late} jours malgré nos relances.\nSans règlement sous 8 jours, nous serons contraints d'appliquer les pénalités de retard et l'indemnité forfaitaire de 40 € prévues par la loi, et d'engager une procédure de recouvrement.\n\nFacture : {link}\n\nL'équipe {company}"],
             'billing_quote_followup_subject' => ['type' => 'text', 'label' => 'Relance devis — objet', 'default' => 'Votre devis {number} — avez-vous des questions ?'],
             'billing_quote_followup_body'    => ['type' => 'textarea', 'label' => 'Relance devis — message', 'default' => "Bonjour {client},\n\nJe reviens vers vous concernant notre devis {number} ({amount}), valable jusqu'au {due_date}.\nAvez-vous pu en prendre connaissance ? Je reste disponible pour l'ajuster ou en discuter de vive voix.\n\nConsulter et accepter le devis : {link}\n\nBien cordialement,\nL'équipe {company}"],
+        ],
+    ],
+
+    /* ================================================================
+     * PAIEMENT EN LIGNE & REÇUS
+     * ================================================================ */
+    'payments' => [
+        'label'  => 'Paiement en ligne & reçus',
+        'icon'   => 'cart',
+        'fields' => [
+            'pay_stripe_enabled'    => ['type' => 'bool', 'label' => 'Proposer le paiement par carte (Stripe)', 'default' => '1', 'help' => 'Nécessite STRIPE_SECRET_KEY dans le fichier .env.'],
+            'pay_stripe_label'      => ['type' => 'text', 'label' => 'Carte — libellé du bouton', 'default' => 'Payer par carte bancaire'],
+            'pay_stripe_desc'       => ['type' => 'text', 'label' => 'Carte — description', 'default' => 'Visa, Mastercard, Apple Pay, Google Pay — paiement sécurisé par Stripe'],
+            'pay_paydunya_enabled'  => ['type' => 'bool', 'label' => 'Proposer le Mobile Money (PayDunya)', 'default' => '1', 'help' => 'Nécessite les clés PAYDUNYA_* dans le fichier .env. Le montant est débité en FCFA (conversion automatique depuis l\'euro).'],
+            'pay_paydunya_label'    => ['type' => 'text', 'label' => 'Mobile Money — libellé du bouton', 'default' => 'Payer par Mobile Money'],
+            'pay_paydunya_desc'     => ['type' => 'text', 'label' => 'Mobile Money — description', 'default' => 'Wave, Orange Money, Free Money, MTN, Moov… via PayDunya'],
+            'pay_paydunya_channels' => ['type' => 'lines', 'label' => 'PayDunya — moyens proposés (facultatif)', 'default' => '', 'help' => 'Un code par ligne pour limiter les choix (ex : wave-senegal, orange-money-senegal, free-money-senegal, card). Vide = tous les moyens activés sur votre compte PayDunya.'],
+            'pay_link_validity_days'=> ['type' => 'text', 'label' => 'Validité par défaut d\'un lien de paiement (jours)', 'default' => '30', 'help' => '0 = sans date limite.'],
+            'pay_invoice_button'    => ['type' => 'bool', 'label' => 'Bouton « Payer en ligne » sur les factures', 'default' => '1', 'help' => 'Affiché sur la page de consultation des factures et disponible dans les emails via la variable {pay_link}.'],
+            'pay_page_title'        => ['type' => 'text', 'label' => 'Page de paiement — titre', 'default' => 'Paiement sécurisé'],
+            'pay_page_intro'        => ['type' => 'textarea', 'label' => 'Page de paiement — texte d\'introduction', 'default' => 'Réglez en quelques secondes, par carte bancaire ou par Mobile Money. Vos informations de paiement sont traitées directement par nos prestataires sécurisés : nous n\'y avons jamais accès.'],
+            'pay_success_text'      => ['type' => 'textarea', 'label' => 'Page de paiement — message après paiement', 'default' => 'Merci, votre paiement a bien été reçu. Votre reçu vous a été envoyé par email et reste téléchargeable ci-dessous.'],
+            'pay_link_email_subject'=> ['type' => 'text', 'label' => 'Email du lien de paiement — objet', 'default' => 'Votre lien de paiement — {title}'],
+            'pay_link_email_body'   => ['type' => 'textarea', 'label' => 'Email du lien de paiement — message', 'default' => "Bonjour {client},\n\nVoici votre lien de paiement sécurisé pour « {title} » d'un montant de {amount} :\n{link}\n\nVous pouvez régler par carte bancaire ou par Mobile Money (Wave, Orange Money…).{expires}\n\nMerci pour votre confiance.\n\nBien cordialement,\nL'équipe {company}", 'help' => 'Variables : {client}, {title}, {amount}, {link}, {expires}, {company}.'],
+            'pay_whatsapp_message'  => ['type' => 'textarea', 'label' => 'Message WhatsApp du lien de paiement', 'default' => "Bonjour {client}, voici votre lien de paiement sécurisé pour « {title} » ({amount}) : {link}"],
+            'pay_notify_admin'      => ['type' => 'bool', 'label' => 'M\'avertir par email à chaque paiement en ligne', 'default' => '1'],
+            'receipt_auto_send'     => ['type' => 'bool', 'label' => 'Envoyer automatiquement le reçu au client après un paiement en ligne', 'default' => '1'],
+            'receipt_title'         => ['type' => 'text', 'label' => 'Reçu — titre du document', 'default' => 'Reçu de paiement'],
+            'receipt_footer'        => ['type' => 'textarea', 'label' => 'Reçu — texte de bas de page', 'default' => 'Ce reçu atteste du paiement de la somme indiquée. Il ne remplace pas la facture, qui reste le document comptable de référence.'],
+            'receipt_email_subject' => ['type' => 'text', 'label' => 'Email du reçu — objet', 'default' => 'Reçu {number} — {company}'],
+            'receipt_email_body'    => ['type' => 'textarea', 'label' => 'Email du reçu — message', 'default' => "Bonjour {client},\n\nNous accusons réception de votre paiement de {amount} ({method}) le {date}.\nVous trouverez votre reçu {number} en pièce jointe.\n\nMerci pour votre confiance.\n\nBien cordialement,\nL'équipe {company}", 'help' => 'Variables : {client}, {number}, {amount}, {method}, {date}, {company}.'],
         ],
     ],
 

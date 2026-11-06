@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {

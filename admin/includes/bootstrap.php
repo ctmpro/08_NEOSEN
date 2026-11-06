@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/form.php';
 require_once __DIR__ . '/layout.php';
 require_once ROOT_PATH . '/includes/crm.php';
+require_once ROOT_PATH . '/includes/payments.php';
 
 require_once ROOT_PATH . '/includes/migrations.php';
 db_migrate_if_needed(db());

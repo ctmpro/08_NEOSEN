@@ -3,7 +3,7 @@
  * Consultation d'un devis / d'une facture par le client via un lien sécurisé (jeton aléatoire).
  * Permet de télécharger le PDF et d'accepter un devis en ligne.
  */
-require_once ROOT_PATH . '/includes/crm.php';
+require_once ROOT_PATH . '/includes/payments.php';
 
 $doc = null;
 try {
@@ -98,6 +98,15 @@ require ROOT_PATH . '/includes/header.php';
             </form>
             <?php elseif ($isQuote && $doc['accepted_at']): ?>
             <div class="contact-card"><p><?= icon('check-circle', 'icon text-success') ?> Devis accepté le <?= e(date('d/m/Y', strtotime($doc['accepted_at']))) ?>.</p></div>
+            <?php endif; ?>
+
+            <?php $payUrl = $doc['doc_type'] === 'invoice' && $balance > 0 ? pay_invoice_link_url($doc) : ''; ?>
+            <?php if ($payUrl): ?>
+            <div class="contact-card">
+                <h2 class="aside-title">Payer en ligne</h2>
+                <p class="pay-muted small" style="margin-bottom:16px">Par carte bancaire ou Mobile Money (Wave, Orange Money…), en toute sécurité.</p>
+                <a class="btn btn-primary btn-block" href="<?= e($payUrl) ?>"><?= icon('shield', 'icon') ?>Régler <?= e(money($balance, $doc['currency'])) ?></a>
+            </div>
             <?php endif; ?>
 
             <?php if ($doc['doc_type'] === 'invoice' && $balance > 0 && setting('billing_iban')): ?>

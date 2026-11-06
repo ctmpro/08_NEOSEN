@@ -130,9 +130,33 @@ if (is_post()) {
                 }
                 db()->prepare('INSERT INTO crm_payments (document_id, amount, paid_on, method, reference) VALUES (?, ?, ?, ?, ?)')
                     ->execute([$id, crm_round($amount, $cur), post('paid_on') ?: date('Y-m-d'), post('method') ?: null, post('reference') ?: null]);
+                $paymentId = (int) db()->lastInsertId();
                 crm_refresh_invoice($id);
                 crm_log((int) $doc['client_id'], 'Paiement reçu : ' . money($amount, $cur, false) . ' (' . $doc['number'] . ')', 'system', $id);
-                flash('success', 'Paiement enregistré.');
+                $msg = 'Paiement enregistré.';
+                if (post_bool('make_receipt')) {
+                    $cl = crm_doc_client($doc);
+                    $rid = receipt_create([
+                        'client_id' => $doc['client_id'], 'document_id' => $id, 'payment_id' => $paymentId,
+                        'payer_name' => $cl['name'], 'payer_email' => $cl['email'] ?? null, 'payer_phone' => $cl['phone'] ?? null,
+                        'amount' => crm_round($amount, $cur), 'currency' => $cur, 'paid_on' => post('paid_on') ?: date('Y-m-d'),
+                        'method' => post('method') ?: null, 'reference' => post('reference') ?: null, 'description' => 'Règlement de la facture ' . $doc['number'],
+                    ]);
+                    $receipt = receipt_get($rid);
+                    $msg .= ' Reçu ' . $receipt['number'] . ' créé.';
+                    if (post_bool('send_receipt') && $receipt['payer_email']) {
+                        $msg .= receipt_send($receipt, $receipt['payer_email']) ? ' Reçu envoyé au client.' : ' (Envoi du reçu impossible.)';
+                    }
+                }
+                flash('success', $msg);
+            }
+            break;
+
+        case 'pay_link':
+            if ($link = pay_invoice_link($doc)) {
+                flash('success', 'Lien de paiement prêt : copiez-le ou envoyez-le au client.');
+            } else {
+                flash('error', 'Impossible de créer le lien : vérifiez que Stripe ou PayDunya est configuré (fichier .env) et activé dans les réglages.');
             }
             break;
 
@@ -159,6 +183,16 @@ $doc = crm_doc($id);
 [$sl, $st] = crm_doc_status($doc);
 $client = crm_client((int) $doc['client_id']);
 $payments = $type === 'invoice' ? crm_doc_payments($id) : [];
+$receiptsByPayment = [];
+$payLinks = [];
+if ($type === 'invoice' && !in_array($doc['status'], ['draft'], true)) {
+    $rs = db()->prepare('SELECT * FROM crm_receipts WHERE document_id = ?');
+    $rs->execute([$id]);
+    foreach ($rs->fetchAll() as $rr) $receiptsByPayment[(int) $rr['payment_id']] = $rr;
+    $pl = db()->prepare('SELECT * FROM pay_links WHERE document_id = ? ORDER BY id DESC');
+    $pl->execute([$id]);
+    $payLinks = $pl->fetchAll();
+}
 $balance = crm_balance($doc);
 $related = db()->prepare('SELECT * FROM crm_documents WHERE source_id = ? OR id = ? ORDER BY id');
 $related->execute([$id, (int) $doc['source_id']]);
@@ -278,7 +312,9 @@ admin_header(crm_doc_title($doc), $type === 'quote' ? 'quotes' : 'invoices', arr
             <ul class="pay-list">
                 <?php foreach ($payments as $p): ?>
                 <li>
-                    <span><strong><?= e(money((float) $p['amount'], $cur)) ?></strong><small class="muted d-block"><?= e(date('d/m/Y', strtotime($p['paid_on']))) ?><?= $p['method'] ? ' · ' . e($p['method']) : '' ?><?= $p['reference'] ? ' · ' . e($p['reference']) : '' ?></small></span>
+                    <span><strong><?= e(money((float) $p['amount'], $cur)) ?></strong><small class="muted d-block"><?= e(date('d/m/Y', strtotime($p['paid_on']))) ?><?= $p['method'] ? ' · ' . e($p['method']) : '' ?><?= $p['reference'] ? ' · ' . e($p['reference']) : '' ?></small>
+                        <?php if ($rc = $receiptsByPayment[(int) $p['id']] ?? null): ?><a class="link small" href="<?= e(admin_url('receipts.php', ['pdf' => $rc['id']])) ?>" target="_blank" rel="noopener">Reçu <?= e($rc['number']) ?></a>
+                        <?php else: ?><a class="link small" href="<?= e(admin_url('receipts.php', ['new' => 1, 'doc' => $id])) ?>">Faire un reçu</a><?php endif; ?></span>
                     <form method="post" class="inline-form" data-confirm="Supprimer ce paiement ?"><?= csrf_field() ?><input type="hidden" name="action" value="delete_payment"><input type="hidden" name="payment_id" value="<?= (int) $p['id'] ?>"><button class="icon-btn icon-btn--danger" title="Supprimer"><?= icon('trash') ?></button></form>
                 </li>
                 <?php endforeach; ?>
@@ -293,8 +329,28 @@ admin_header(crm_doc_title($doc), $type === 'quote' ? 'quotes' : 'invoices', arr
                     <?= f_select('method', 'Moyen', array_combine(setting_lines('billing_payment_methods'), setting_lines('billing_payment_methods')) ?: ['Virement bancaire' => 'Virement bancaire']) ?>
                     <?= f_text('reference', 'Référence', '') ?>
                 </div>
+                <?= f_toggle('make_receipt', 'Générer un reçu', true) ?>
+                <?= f_toggle('send_receipt', 'Envoyer le reçu au client par email', false) ?>
                 <button class="btn btn-sm btn-primary"><?= icon('plus') ?> Enregistrer le paiement</button>
             </form>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($type === 'invoice' && in_array($doc['status'], ['issued', 'partial'], true)): ?>
+        <section class="card">
+            <div class="card-head"><h2>Paiement en ligne</h2><a class="link small" href="<?= e(admin_url('payment-links.php', ['new' => 1, 'doc' => $id])) ?>">Lien personnalisé</a></div>
+            <?php $activeLinks = array_filter($payLinks, fn($l) => pay_link_state($l)[0] === 'active'); ?>
+            <?php if ($activeLinks): foreach ($activeLinks as $l): ?>
+            <p class="small muted"><?= e($l['title']) ?> — <?= e(money(pay_link_due($l), $l['currency'])) ?></p>
+            <div class="copy-field"><input type="text" readonly value="<?= e(pay_link_url($l)) ?>" aria-label="Lien de paiement"><button type="button" class="btn btn-sm btn-ghost" data-copy>Copier</button></div>
+            <div class="form-actions">
+                <a class="btn btn-sm btn-ghost" href="<?= e(pay_whatsapp_url($l)) ?>" target="_blank" rel="noopener"><?= icon('whatsapp') ?> WhatsApp</a>
+                <a class="btn btn-sm btn-ghost" href="<?= e(admin_url('payment-links.php', ['id' => $l['id']])) ?>">Envoyer / suivre</a>
+            </div>
+            <?php endforeach; else: ?>
+            <p class="muted small">Créez un lien que le client pourra régler par carte bancaire (Stripe) ou Mobile Money (PayDunya). Le paiement sera enregistré automatiquement sur cette facture avec son reçu.</p>
+            <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="pay_link"><button class="btn btn-primary btn-block"><?= icon('cart') ?> Créer le lien de paiement</button></form>
             <?php endif; ?>
         </section>
         <?php endif; ?>

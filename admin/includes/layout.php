@@ -20,6 +20,8 @@ function admin_menu(): array {
         ['clients', 'clients.php', 'Clients & prospects', 'users'],
         ['quotes', 'documents.php?type=quote', 'Devis', 'edit'],
         ['invoices', 'documents.php?type=invoice', 'Factures & avoirs', 'tag'],
+        ['paylinks', 'payment-links.php', 'Liens de paiement', 'cart'],
+        ['receipts', 'receipts.php', 'Reçus', 'check-circle'],
         ['reminders', 'reminders.php', 'Relances', 'clock', $toRemind],
         ['items', 'items.php', 'Catalogue', 'cube'],
         ['cards', 'cards.php', 'Cartes de visite', 'user'],
