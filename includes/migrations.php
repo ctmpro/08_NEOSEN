@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -57,6 +57,8 @@ function db_migrate(PDO $pdo): void {
                 $set('contact_phone', '+33 7 88 40 51 21'), $set('contact_whatsapp', '+33788405121'), 'cheikh.mbaye@neosen.tech',
                 $set('site_domain', 'neosen.tech'), 'Scannez pour découvrir nos réalisations', 'Carte de visite']);
     }
+    // v7 : la réalisation EKTO SEN devient KAYOR (kayor.sn)
+    db_replace_seed_project($pdo, 'ekto-sen', 'kayor');
     $pdo->prepare("INSERT INTO settings (setting_key, lang, setting_value) VALUES ('db_version', 'fr', ?)
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([(string) DB_VERSION]);
 }
@@ -105,6 +107,42 @@ function db_add_seed_projects(PDO $pdo, array $slugs): void {
         $min -= 10;
         db_insert_seed_project($pdo, $p, $min);
     }
+}
+
+/**
+ * Remplace une réalisation par sa nouvelle version du fichier seed (textes + images),
+ * en conservant sa position, sa visibilité et son statut.
+ */
+function db_replace_seed_project(PDO $pdo, string $oldSlug, string $newSlug): void {
+    $seedFile = dirname(__DIR__) . '/install/seed.php';
+    if (!is_file($seedFile)) return;
+    $stmt = $pdo->prepare('SELECT * FROM projects WHERE slug = ?');
+    $stmt->execute([$oldSlug]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!$rows) return;
+    $check = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE slug = ?');
+    $check->execute([$newSlug]);
+    if ((int) $check->fetchColumn() > 0) return;
+    $seed = require $seedFile;
+    $p = null;
+    foreach ($seed['projects'] as $candidate) {
+        if ($candidate['slug'] === $newSlug) $p = $candidate;
+    }
+    if (!$p) return;
+    foreach ($rows as $old) {
+        // Anciennes images supprimées
+        $imgs = $pdo->prepare('SELECT path FROM project_images WHERE project_id = ?');
+        $imgs->execute([$old['id']]);
+        foreach ([$old['main_image'], ...$imgs->fetchAll(PDO::FETCH_COLUMN)] as $path) {
+            if (function_exists('delete_media')) delete_media($path);
+        }
+        $pdo->prepare('DELETE FROM project_images WHERE project_id = ?')->execute([$old['id']]);
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$old['id']]);
+        db_insert_seed_project($pdo, $p, (int) $old['sort_order'], $old['lang']);
+        $pdo->prepare('UPDATE projects SET is_visible = ?, status = ?, is_featured = ? WHERE slug = ? AND lang = ?')
+            ->execute([$old['is_visible'], $old['status'], $old['is_featured'], $newSlug, $old['lang']]);
+    }
+    if (defined('UPLOAD_PATH')) @rmdir(UPLOAD_PATH . '/projects/' . $oldSlug);
 }
 
 /** Lance les migrations si la base n'est pas à jour (silencieux en cas d'échec, consigné dans les logs). */

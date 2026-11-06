@@ -2,6 +2,11 @@
 /**
  * Fiche détaillée d'une réalisation : /realisations/{slug}
  */
+// Anciennes adresses de réalisations renommées (redirection permanente pour le référencement)
+$renamed = ['ekto-sen' => 'kayor'];
+if (isset($renamed[$params['slug'] ?? ''])) {
+    redirect(url('realisations/' . $renamed[$params['slug']]), 301);
+}
 $project = get_project($params['slug'] ?? '');
 if (!$project) {
     http_response_code(404);
