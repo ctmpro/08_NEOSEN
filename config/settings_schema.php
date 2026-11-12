@@ -334,6 +334,8 @@ return [
             'company_siren'      => ['type' => 'text', 'label' => 'SIREN', 'default' => '131 568 255'],
             'company_siret'      => ['type' => 'text', 'label' => 'SIRET (établissement principal)', 'default' => '131 568 255 00015'],
             'company_euid'       => ['type' => 'text', 'label' => 'Numéro EUID', 'default' => 'FR7501.131568255'],
+            'company_duns'       => ['type' => 'text', 'label' => 'Numéro D-U-N-S (usage interne)', 'default' => '28-850-4099', 'help' => 'Utilisé pour Apple Developer, Google Play, etc. Non affiché sur le site.'],
+            'company_naf'        => ['type' => 'text', 'label' => 'Code NAF / APE (usage interne)', 'default' => '6201Z — Programmation informatique', 'help' => 'Non affiché sur le site.'],
             'company_vat'        => ['type' => 'text', 'label' => 'N° de TVA intracommunautaire', 'default' => 'FR40131568255'],
             'company_activity'   => ['type' => 'textarea', 'label' => 'Activité (objet)', 'default' => 'Conception, développement de logiciels et outils informatiques, ainsi que leur exploitation et maintenance. Conseil en informatique, en programmation et en stratégie digitale, et réalisation de prestations associées.'],
             'company_director'   => ['type' => 'text', 'label' => 'Directeur de la publication', 'default' => 'Cheikh Tidiane Mbaye, Président'],
