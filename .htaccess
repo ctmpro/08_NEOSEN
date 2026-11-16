@@ -1,0 +1,72 @@
+# ============================================================
+# NEOSEN — Configuration Apache
+# ============================================================
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Si le site est installé dans un sous-dossier, décommentez et adaptez :
+    # RewriteBase /neosensite/
+
+    # Forcer HTTPS en production (décommenter une fois le certificat installé)
+    # RewriteCond %{HTTPS} !=on
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Bloquer l'accès aux dossiers et fichiers sensibles
+    RewriteRule ^(config|includes|pages|lang|tools|utilitaires)(/|$) - [F,L]
+    RewriteRule ^install/(?!install\.php$) - [F,L]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+    RewriteRule \.(sql|md|log|env|ini|sh|lock)$ - [F,L]
+
+    # Supprimer le slash final (hors dossiers réels)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.+)/$ $1 [R=301,L]
+
+    # Fichiers et dossiers existants servis directement
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Tout le reste → contrôleur frontal
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+ErrorDocument 404 /index.php
+
+# ---------- En-têtes de sécurité ----------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    <FilesMatch "\.(css|js|webp|avif|jpg|jpeg|png|gif|svg|woff2|mp4|webm|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# ---------- Compression ----------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/xml application/javascript application/json image/svg+xml
+</IfModule>
+
+# ---------- Cache navigateur ----------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 hour"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/avif "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType video/mp4 "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>

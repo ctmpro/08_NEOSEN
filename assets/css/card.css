@@ -1,0 +1,149 @@
+/* Carte de visite numérique (/c/{code}) — page mobile autonome */
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+    --bg: #070B18; --surface: #0F1528; --surface-2: #151C33; --line: rgba(255,255,255,.08);
+    --text: #F3F5FB; --muted: #9AA3BC; --radius: 18px;
+    --grad: linear-gradient(135deg, var(--primary), var(--accent));
+}
+.theme-clair {
+    --bg: #F5F7FB; --surface: #FFFFFF; --surface-2: #F0F2F8; --line: #E4E8F1;
+    --text: #0A0F1F; --muted: #5B6478;
+}
+.theme-degrade { --bg: #070B18; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+.icon { width: 20px; height: 20px; flex: none; }
+
+.vc { max-width: 480px; margin: 0 auto; padding-bottom: 32px; overflow: hidden; }
+
+/* En-tête */
+.vc-hero {
+    position: relative; text-align: center; padding: 22px 20px 28px;
+    background: radial-gradient(120% 70% at 50% 0%, rgba(59,75,255,.35), transparent 70%), var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+.theme-clair .vc-hero { background: linear-gradient(180deg, #fff, var(--bg)); }
+.theme-degrade .vc-hero { background: var(--grad); border-bottom: 0; }
+.vc-glow {
+    position: absolute; width: 260px; height: 260px; right: -90px; top: -90px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,200,180,.35), transparent 70%); pointer-events: none;
+}
+.theme-degrade .vc-glow { background: radial-gradient(circle, rgba(255,255,255,.25), transparent 70%); }
+.vc-brand { position: relative; display: inline-flex; margin-bottom: 26px; text-decoration: none; }
+.vc-brand img { height: 28px; width: auto; }
+.vc-avatar {
+    position: relative; width: 112px; height: 112px; margin: 0 auto 16px; border-radius: 50%; padding: 3px;
+    background: var(--grad); box-shadow: 0 12px 40px rgba(59,75,255,.35);
+}
+.theme-degrade .vc-avatar { background: rgba(255,255,255,.9); }
+.vc-avatar img, .vc-avatar span {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+    display: grid; place-items: center; background: var(--surface);
+    font: 700 36px/1 Sora, sans-serif; letter-spacing: .02em;
+}
+.vc-avatar span { background: var(--surface) ; color: var(--text); }
+.vc-name { position: relative; margin: 0; font: 700 26px/1.2 Sora, sans-serif; letter-spacing: -.01em; }
+.vc-role { position: relative; margin: 6px 0 0; color: var(--muted); font-weight: 500; }
+.theme-degrade .vc-role, .theme-degrade .vc-tagline { color: rgba(255,255,255,.85); }
+.theme-degrade .vc-hero { color: #fff; }
+.vc-tagline {
+    position: relative; display: inline-block; margin: 14px 0 0; padding: 5px 12px; border-radius: 99px;
+    border: 1px solid var(--line); font-size: 13px; color: var(--muted); letter-spacing: .02em;
+}
+.theme-degrade .vc-tagline { border-color: rgba(255,255,255,.35); }
+
+.vc-actions {
+    position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 26px 0 14px;
+}
+.vc-actions a {
+    display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 4px 12px;
+    border-radius: 16px; background: var(--surface); border: 1px solid var(--line);
+    text-decoration: none; font-size: 12px; font-weight: 600; color: var(--text);
+    transition: transform .15s, border-color .15s;
+}
+.vc-actions a .icon { width: 22px; height: 22px; color: var(--accent); }
+.vc-actions a:active { transform: scale(.96); }
+.theme-degrade .vc-actions a { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22); color: #fff; }
+.theme-degrade .vc-actions a .icon { color: #fff; }
+.vc-save {
+    position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 15px 20px; border-radius: 16px; background: var(--grad); color: #fff;
+    font-weight: 600; text-decoration: none; box-shadow: 0 10px 30px rgba(59,75,255,.35);
+}
+.theme-degrade .vc-save { background: #fff; color: var(--dark); box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+
+/* Sections */
+.vc-section { padding: 28px 20px 4px; }
+.vc-title { margin: 0 0 14px; font: 600 18px/1.3 Sora, sans-serif; }
+.vc-title-row { display: flex; align-items: baseline; justify-content: space-between; }
+.vc-title-row a { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.vc-intro { margin: 0; font-size: 16px; line-height: 1.65; }
+.vc-muted { margin: -6px 0 16px; color: var(--muted); }
+
+.vc-services { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.vc-services a {
+    display: flex; gap: 14px; align-items: flex-start; padding: 14px; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--line); text-decoration: none;
+}
+.vc-services strong { display: block; font-weight: 600; }
+.vc-services small { display: block; color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 2px; }
+.vc-ico {
+    flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(135deg, rgba(59,75,255,.18), rgba(20,200,180,.18)); color: var(--accent);
+}
+
+.vc-projects {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 74%; gap: 12px; overflow-x: auto;
+    margin: 0 -20px; padding: 2px 20px 10px; scroll-snap-type: x mandatory; scroll-padding: 0 20px; scrollbar-width: none;
+}
+.vc-projects::-webkit-scrollbar { display: none; }
+.vc-project { scroll-snap-align: start; text-decoration: none; }
+.vc-project-img {
+    aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: var(--surface-2);
+    border: 1px solid var(--line); margin-bottom: 8px; display: grid; place-items: center;
+}
+.vc-project-img img { width: 100%; height: 100%; object-fit: cover; }
+.vc-project-img span { font: 700 34px Sora, sans-serif; color: var(--muted); }
+.vc-project strong { display: block; font-weight: 600; }
+.vc-project small { color: var(--muted); font-size: 12.5px; }
+
+/* Formulaire */
+.vc-form { display: grid; gap: 12px; }
+.vc-field { display: grid; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.vc-field input, .vc-field textarea {
+    width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font: inherit; font-size: 16px; outline: none;
+}
+.vc-field input:focus, .vc-field textarea:focus { border-color: var(--accent); }
+.vc-field em, .vc-error-inline { color: #FF7A7A; font-style: normal; font-size: 12.5px; }
+.has-error input, .has-error textarea { border-color: #FF7A7A; }
+.vc-consent { display: flex; gap: 10px; font-size: 13px; color: var(--muted); align-items: flex-start; }
+.vc-consent input { margin-top: 3px; accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+.vc-consent.has-error span { color: #FF7A7A; }
+.vc-submit {
+    display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; cursor: pointer;
+    padding: 15px; border-radius: 14px; background: var(--grad); color: #fff; font: 600 15px Inter, sans-serif;
+}
+.vc-error { padding: 12px 14px; border-radius: 12px; background: rgba(255,90,90,.12); color: #FF8A8A; }
+.vc-success {
+    display: flex; gap: 14px; align-items: center; padding: 18px; border-radius: var(--radius);
+    background: rgba(20,200,180,.12); border: 1px solid rgba(20,200,180,.3);
+}
+.vc-success .icon { width: 32px; height: 32px; color: var(--accent); }
+.vc-success p { margin: 0; }
+.vc-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.vc-footer {
+    margin-top: 32px; padding: 22px 20px 0; border-top: 1px solid var(--line); text-align: center;
+    display: grid; gap: 6px; justify-items: center; color: var(--muted); font-size: 13px;
+}
+.vc-footer a { font-weight: 600; color: var(--text); text-decoration: none; }
+.vc-footer span { display: inline-flex; gap: 6px; align-items: center; }
+.vc-footer .icon { width: 15px; height: 15px; }
+.vc-footer small { font-size: 11.5px; opacity: .8; }

@@ -1,0 +1,5 @@
+# Seul install.php est accessible (protégé par INSTALL_TOKEN)
+Require all denied
+<Files "install.php">
+    Require all granted
+</Files>
