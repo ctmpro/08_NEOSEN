@@ -105,7 +105,7 @@ function company_legal_rows(): array {
     $rows = [
         'Dénomination sociale' => setting('company_legal_name'),
         'Forme juridique'      => setting('company_legal_form'),
-        'Capital social'       => setting('company_capital'),
+        'Capital social'       => setting_bool('legal_show_capital') ? setting('company_capital') : '',
         'Siège social'         => setting('company_address'),
         'RCS'                  => setting('company_rcs'),
         'SIREN'                => setting('company_siren'),

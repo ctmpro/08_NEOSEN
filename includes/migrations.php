@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -59,6 +59,10 @@ function db_migrate(PDO $pdo): void {
     }
     // v7 : la réalisation EKTO SEN devient KAYOR (kayor.sn)
     db_replace_seed_project($pdo, 'ekto-sen', 'kayor');
+    // v9 : discrétion — nom du dirigeant retiré du site (le capital reste sur les devis/factures, masqué sur le site)
+    if ((int) $pdo->query("SELECT COUNT(*) FROM settings WHERE setting_key = 'db_version' AND CAST(setting_value AS UNSIGNED) < 9")->fetchColumn() > 0) {
+        $pdo->exec("UPDATE settings SET setting_value = '' WHERE setting_key = 'company_director'");
+    }
     $pdo->prepare("INSERT INTO settings (setting_key, lang, setting_value) VALUES ('db_version', 'fr', ?)
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([(string) DB_VERSION]);
 }

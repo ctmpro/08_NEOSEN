@@ -11,7 +11,6 @@
 |---|---|
 | Dénomination sociale | **NEOSEN** |
 | Forme juridique | Société par actions simplifiée unipersonnelle (SASU) |
-| Capital social | 100,00 € |
 | Siège social | 47 rue Vivienne, 75002 Paris, France |
 | RCS | 131 568 255 R.C.S. Paris |
 | SIREN | 131 568 255 |
@@ -20,7 +19,7 @@
 | TVA intracommunautaire | FR40131568255 |
 | Code NAF / APE | 6201Z — Programmation informatique |
 | D-U-N-S | 28-850-4099 |
-| Président / directeur de la publication | Cheikh Tidiane MBAYE, Président |
+| Directeur de la publication | « Le Président de la société NEOSEN » (ne pas publier de nom de personne) |
 | **Email de contact (unique pour tout)** | **contact@neosen.tech** |
 | Téléphone | +33 7 88 40 51 21 |
 | Site de l'éditeur | https://neosen.tech |
@@ -97,6 +96,7 @@ Tu es juriste spécialisé en droit du numérique (France / Union européenne). 
 **Règles à respecter :**
 - Utilise exactement les informations des parties 1 à 3, sans inventer de données, de prestataires ou de durées. Quand une information manque, écris **[À COMPLÉTER : …]**.
 - Une seule adresse de contact partout : **contact@neosen.tech**.
+- Discrétion : ne publie **aucun nom de personne** (ni dirigeant, ni associé) et n'indique pas le capital social dans les documents destinés au public.
 - N'affirme rien que l'application ne fait pas (ex. « nous ne partageons jamais vos données » si un prestataire en reçoit).
 - Si l'application traite des données sensibles (art. 9 RGPD) ou s'adresse à des mineurs, signale-le en tête de ta réponse, avec les obligations supplémentaires (consentement explicite, analyse d'impact AIPD, âge de consentement numérique de 15 ans en France).
 - Respecte les règles des stores : Apple App Review Guidelines (5.1.1 confidentialité, 3.1 achats intégrés) et règles Google Play (données utilisateur, paiements).
