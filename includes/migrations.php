@@ -7,7 +7,7 @@
  * ainsi que par install/install.php. Les tables sont créées à partir de install/schema.sql (à conserver).
  */
 
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 
 /** Colonnes ajoutées après la création initiale des tables : [table, colonne, définition]. */
 function db_added_columns(): array {
@@ -36,7 +36,7 @@ function db_migrate(PDO $pdo): void {
         }
     }
     // Réalisations ajoutées après l'installation initiale (insérées si absentes)
-    db_add_seed_projects($pdo, ['nioulink', 'afamshop']);
+    db_add_seed_projects($pdo, ['nioulink', 'afamshop', 'la-teranga']);
     // v5 : technologies de NiouLink précisées (seulement si la fiche n'a pas été modifiée entre-temps)
     $pdo->prepare('UPDATE projects SET technologies = ? WHERE slug = ? AND technologies = ?')
         ->execute(['React Native, Expo, iOS, Android, Application web, API REST, Assistant IA, Mobile money', 'nioulink', 'iOS, Android, Application web, API REST, Assistant IA, Mobile money']);
