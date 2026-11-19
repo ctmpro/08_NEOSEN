@@ -79,8 +79,10 @@ jobs:
             echo "SITE_URL ou DEPLOY_INSTALL_TOKEN absent : mise à jour de la base ignorée (elle se fera à la prochaine ouverture de l'admin)."
             exit 0
           fi
+          # Espaces, retours à la ligne ou guillemets copiés par erreur autour du jeton : on les retire (le serveur fait de même).
+          TOKEN=$(printf '%s' "$DEPLOY_INSTALL_TOKEN" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^["'"'"']\(.*\)["'"'"']$/\1/')
           code=$(curl -sS -o response.json -w '%{http_code}' --retry 3 --retry-delay 5 -X POST \
-            -H "X-Deploy-Token: ${DEPLOY_INSTALL_TOKEN}" \
+            -H "X-Deploy-Token: ${TOKEN}" \
             "${SITE_URL%/}/api/deploy-hook.php")
           cat response.json; echo
           case "$code" in
