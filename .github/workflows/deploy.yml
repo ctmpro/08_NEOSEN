@@ -1,0 +1,94 @@
+# Déploiement automatique du site NEOSEN sur l'hébergement OVH (FTP).
+# Se lance à chaque push sur la branche main, ou à la main depuis l'onglet « Actions » de GitHub.
+#
+# Secrets GitHub utilisés (Settings > Secrets and variables > Actions) :
+#   FTP_SERVER            ex. ftp.cluster0XX.hosting.ovh.net
+#   FTP_USERNAME          identifiant FTP OVH
+#   FTP_PASSWORD          mot de passe FTP OVH
+#   FTP_PROTOCOL          ftps (recommandé) ou ftp
+#   FTP_SERVER_DIR        dossier du site sur le serveur, avec / final, ex. www/
+#   SITE_URL              ex. https://neosen.tech
+#   DEPLOY_INSTALL_TOKEN  même valeur que DEPLOY_INSTALL_TOKEN dans le .env du serveur
+#                         (sert à lancer la mise à jour de la base après chaque déploiement)
+
+name: Déploiement OVH
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Vérifier puis déployer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Vérifier la syntaxe PHP
+        run: |
+          find . -name '*.php' -not -path './utilitaires/*' -not -path './node_modules/*' -print0 \
+            | xargs -0 -n1 -P4 php -l > /dev/null
+
+      - name: Générer les CSS/JS minifiés
+        run: php tools/minify.php
+
+      - name: Envoyer les fichiers sur OVH
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Seuls les fichiers modifiés sont envoyés (état mémorisé sur le serveur).
+          # Ne jamais envoyer ni toucher : le .env du serveur et les fichiers envoyés depuis l'admin (uploads).
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            .env
+            .env.*
+            uploads/**
+            docs/**
+            tools/**
+            README.md
+            **/.DS_Store
+
+      - name: Mettre à jour la base de données
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          DEPLOY_INSTALL_TOKEN: ${{ secrets.DEPLOY_INSTALL_TOKEN }}
+        run: |
+          if [ -z "$SITE_URL" ] || [ -z "$DEPLOY_INSTALL_TOKEN" ]; then
+            echo "SITE_URL ou DEPLOY_INSTALL_TOKEN absent : mise à jour de la base ignorée (elle se fera à la prochaine ouverture de l'admin)."
+            exit 0
+          fi
+          curl -fsS --retry 3 --retry-delay 5 -X POST \
+            -H "X-Deploy-Token: ${DEPLOY_INSTALL_TOKEN}" \
+            "${SITE_URL%/}/api/deploy-hook.php"
+          echo
+
+      - name: Vérifier que le site répond
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then exit 0; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 5 "${SITE_URL%/}/")
+          echo "Page d'accueil : HTTP $code"
+          test "$code" -lt 500
