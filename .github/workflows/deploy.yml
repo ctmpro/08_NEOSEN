@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Récupérer le code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Installer PHP
         uses: shivammathur/setup-php@v2
@@ -79,10 +79,16 @@ jobs:
             echo "SITE_URL ou DEPLOY_INSTALL_TOKEN absent : mise à jour de la base ignorée (elle se fera à la prochaine ouverture de l'admin)."
             exit 0
           fi
-          curl -fsS --retry 3 --retry-delay 5 -X POST \
+          code=$(curl -sS -o response.json -w '%{http_code}' --retry 3 --retry-delay 5 -X POST \
             -H "X-Deploy-Token: ${DEPLOY_INSTALL_TOKEN}" \
-            "${SITE_URL%/}/api/deploy-hook.php"
-          echo
+            "${SITE_URL%/}/api/deploy-hook.php")
+          cat response.json; echo
+          case "$code" in
+            200) echo "Base de données à jour." ;;
+            404) echo "::error::Le serveur ne trouve pas DEPLOY_INSTALL_TOKEN dans son fichier .env (ou api/deploy-hook.php n'a pas été envoyé). Ajoutez la ligne DEPLOY_INSTALL_TOKEN=... dans le .env à la racine du site sur OVH."; exit 1 ;;
+            403) echo "::error::Jeton refusé : DEPLOY_INSTALL_TOKEN est différent entre le secret GitHub et le .env du serveur."; exit 1 ;;
+            *)   echo "::error::Mise à jour de la base en échec (HTTP $code)."; exit 1 ;;
+          esac
 
       - name: Vérifier que le site répond
         env:
